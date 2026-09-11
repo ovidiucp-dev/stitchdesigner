@@ -15,6 +15,11 @@ import {
   rgbToHex,
 } from "@/lib/converter/colorMatching";
 
+import type {
+  CleanupLevel,
+  LoadedImage,
+} from "@/lib/converter/converterTypes";
+
 import {
   loadImageFile,
   releaseLoadedImage,
@@ -30,15 +35,37 @@ import {
   type RgbColor,
 } from "@/lib/converter/medianCut";
 
-import type {
-  LoadedImage,
-} from "@/lib/converter/converterTypes";
+import {
+  cleanupPatternColors,
+} from "@/lib/converter/patternCleanup";
 
 const TEST_COLOR_OPTIONS = [
   8,
   16,
   24,
 ] as const;
+
+const CLEANUP_OPTIONS: {
+  value: CleanupLevel;
+  label: string;
+}[] = [
+  {
+    value: "none",
+    label: "Sin limpiar",
+  },
+  {
+    value: "soft",
+    label: "Suave",
+  },
+  {
+    value: "balanced",
+    label: "Equilibrada",
+  },
+  {
+    value: "high",
+    label: "Alta",
+  },
+];
 
 export default function QuantizationTestPage() {
   const resultCanvasRef =
@@ -59,6 +86,14 @@ export default function QuantizationTestPage() {
     setMaxColors,
   ] =
     useState(16);
+
+  const [
+    cleanupLevel,
+    setCleanupLevel,
+  ] =
+    useState<CleanupLevel>(
+      "balanced",
+    );
 
   const [
     removeBackground,
@@ -106,13 +141,15 @@ export default function QuantizationTestPage() {
     };
   }, [loadedImage]);
 
-  function renderQuantizedImage(
+  function renderConvertedImage(
     image:
       LoadedImage,
     colors:
       number,
     shouldRemoveBackground:
       boolean,
+    cleanup:
+      CleanupLevel,
   ) {
     const dimensions =
       calculateProportionalDimensions(
@@ -173,6 +210,15 @@ export default function QuantizationTestPage() {
         backgroundMask,
       );
 
+    const cleaned =
+      cleanupPatternColors(
+        matching.colorIndexes,
+        dimensions.width,
+        dimensions.height,
+        generatedPalette,
+        cleanup,
+      );
+
     const output =
       new Uint8ClampedArray(
         dimensions.width *
@@ -186,11 +232,11 @@ export default function QuantizationTestPage() {
     for (
       let pixelIndex = 0;
       pixelIndex <
-      matching.colorIndexes.length;
+      cleaned.colorIndexes.length;
       pixelIndex += 1
     ) {
       const colorIndex =
-        matching.colorIndexes[
+        cleaned.colorIndexes[
           pixelIndex
         ];
 
@@ -282,13 +328,14 @@ export default function QuantizationTestPage() {
     );
 
     setUsageCounts(
-      matching.usageCounts,
+      cleaned.usageCounts,
     );
 
     setInfo(
       `${dimensions.width} × ${dimensions.height} · ` +
         `${stitchCount} puntadas · ` +
-        `${generatedPalette.length} colores`,
+        `${generatedPalette.length} colores · ` +
+        `${cleaned.changedCellCount} celdas limpiadas`,
     );
   }
 
@@ -299,9 +346,7 @@ export default function QuantizationTestPage() {
     const file =
       event.target.files?.[0];
 
-    if (
-      !file
-    ) {
+    if (!file) {
       return;
     }
 
@@ -325,10 +370,11 @@ export default function QuantizationTestPage() {
         image,
       );
 
-      renderQuantizedImage(
+      renderConvertedImage(
         image,
         maxColors,
         removeBackground,
+        cleanupLevel,
       );
     } catch (
       caughtError
@@ -344,6 +390,42 @@ export default function QuantizationTestPage() {
       "";
   }
 
+  function renderAgain(
+    options?: {
+      colors?: number;
+      removeBackground?: boolean;
+      cleanup?: CleanupLevel;
+    },
+  ) {
+    if (
+      !loadedImage
+    ) {
+      return;
+    }
+
+    try {
+      renderConvertedImage(
+        loadedImage,
+        options?.colors ??
+          maxColors,
+        options?.removeBackground ??
+          removeBackground,
+        options?.cleanup ??
+          cleanupLevel,
+      );
+
+      setError(null);
+    } catch (
+      caughtError
+    ) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Ha ocurrido un error inesperado.",
+      );
+    }
+  }
+
   function updateColors(
     value: number,
   ) {
@@ -351,27 +433,9 @@ export default function QuantizationTestPage() {
       value,
     );
 
-    if (
-      loadedImage
-    ) {
-      try {
-        renderQuantizedImage(
-          loadedImage,
-          value,
-          removeBackground,
-        );
-
-        setError(null);
-      } catch (
-        caughtError
-      ) {
-        setError(
-          caughtError instanceof Error
-            ? caughtError.message
-            : "Ha ocurrido un error inesperado.",
-        );
-      }
-    }
+    renderAgain({
+      colors: value,
+    });
   }
 
   function updateBackground(
@@ -381,45 +445,42 @@ export default function QuantizationTestPage() {
       value,
     );
 
-    if (
-      loadedImage
-    ) {
-      try {
-        renderQuantizedImage(
-          loadedImage,
-          maxColors,
-          value,
-        );
+    renderAgain({
+      removeBackground:
+        value,
+    });
+  }
 
-        setError(null);
-      } catch (
-        caughtError
-      ) {
-        setError(
-          caughtError instanceof Error
-            ? caughtError.message
-            : "Ha ocurrido un error inesperado.",
-        );
-      }
-    }
+  function updateCleanup(
+    value: CleanupLevel,
+  ) {
+    setCleanupLevel(
+      value,
+    );
+
+    renderAgain({
+      cleanup: value,
+    });
   }
 
   return (
     <main className="min-h-screen bg-slate-100 p-8 text-slate-900">
       <div className="mx-auto max-w-6xl">
         <h1 className="text-2xl font-semibold">
-          Prueba de cuantización de color
+          Prueba del motor Imagen → Patrón
         </h1>
 
         <p className="mt-2 text-sm text-slate-600">
-          Median Cut V1 — Motor Imagen → Patrón
+          Cuantización y limpieza V1
         </p>
 
         <div className="mt-6 flex flex-wrap items-center gap-6">
           <input
             type="file"
             accept="image/jpeg,image/png"
-            onChange={handleFile}
+            onChange={
+              handleFile
+            }
             className="rounded border border-slate-300 bg-white p-2"
           />
 
@@ -471,6 +532,38 @@ export default function QuantizationTestPage() {
           </label>
         </div>
 
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium">
+            Limpieza:
+          </span>
+
+          {CLEANUP_OPTIONS.map(
+            (option) => (
+              <button
+                key={
+                  option.value
+                }
+                type="button"
+                onClick={() =>
+                  updateCleanup(
+                    option.value,
+                  )
+                }
+                className={`rounded border px-3 py-2 text-sm ${
+                  cleanupLevel ===
+                  option.value
+                    ? "border-slate-900 bg-slate-900 text-white"
+                    : "border-slate-300 bg-white"
+                }`}
+              >
+                {
+                  option.label
+                }
+              </button>
+            ),
+          )}
+        </div>
+
         {error && (
           <div className="mt-4 rounded border border-red-300 bg-red-50 p-3 text-red-800">
             {error}
@@ -486,7 +579,7 @@ export default function QuantizationTestPage() {
         <div className="mt-8 grid grid-cols-[minmax(0,1fr)_280px] gap-8">
           <section>
             <h2 className="mb-3 font-semibold">
-              Resultado cuantizado
+              Resultado
             </h2>
 
             <div
@@ -516,7 +609,7 @@ export default function QuantizationTestPage() {
 
           <aside>
             <h2 className="mb-3 font-semibold">
-              Paleta generada
+              Paleta
             </h2>
 
             <div className="space-y-2">
