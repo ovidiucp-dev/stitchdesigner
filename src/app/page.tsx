@@ -1,9 +1,34 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
-import { internalPalette } from "@/data/internalPalette";
-import { isValidPattern } from "@/lib/patternValidation";
+import {
+  CELL_SIZE,
+  renderPatternToCanvas,
+} from "@/lib/canvasRenderer";
+
+import {
+  recordHistoryEntry,
+  redoPatternChange,
+  undoPatternChange,
+} from "@/lib/editorHistory";
+
+import {
+  getStitchAt,
+  updatePatternCell,
+} from "@/lib/patternOperations";
+
+import {
+  internalPalette,
+} from "@/data/internalPalette";
+
+import {
+  isValidPattern,
+} from "@/lib/patternValidation";
 
 import type {
   Pattern,
@@ -11,16 +36,29 @@ import type {
   StitchHistoryEntry,
 } from "@/types/pattern";
 
-type EditorTool = "stitch" | "erase" | "pan";
+type EditorTool =
+  | "stitch"
+  | "erase"
+  | "pan";
 
-const CELL_SIZE = 20;
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 4;
 
 export default function Home() {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const workspaceRef = useRef<HTMLElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const canvasRef =
+    useRef<HTMLCanvasElement | null>(
+      null,
+    );
+
+  const workspaceRef =
+    useRef<HTMLElement | null>(
+      null,
+    );
+
+  const fileInputRef =
+    useRef<HTMLInputElement | null>(
+      null,
+    );
 
   const panStartRef = useRef({
     x: 0,
@@ -29,49 +67,133 @@ export default function Home() {
     scrollTop: 0,
   });
 
-  const [showNewPattern, setShowNewPattern] = useState(false);
-  const [pattern, setPattern] = useState<Pattern | null>(null);
+  const [
+    showNewPattern,
+    setShowNewPattern,
+  ] = useState(false);
 
-  const [name, setName] = useState("Mi patrón");
-  const [width, setWidth] = useState(100);
-  const [height, setHeight] = useState(80);
-  const [fabricType, setFabricType] = useState("aida");
-  const [fabricCount, setFabricCount] = useState(14);
-  const [fabricColor, setFabricColor] = useState("#ffffff");
+  const [
+    pattern,
+    setPattern,
+  ] =
+    useState<Pattern | null>(
+      null,
+    );
 
-  const [selectedColorId, setSelectedColorId] =
-    useState(internalPalette[0].id);
+  const [
+    name,
+    setName,
+  ] =
+    useState("Mi patrón");
 
-  const [selectedTool, setSelectedTool] =
-    useState<EditorTool>("stitch");
+  const [
+    width,
+    setWidth,
+  ] =
+    useState(100);
 
-  const [zoom, setZoom] = useState(1);
-  const [isPanning, setIsPanning] = useState(false);
+  const [
+    height,
+    setHeight,
+  ] =
+    useState(80);
 
-  const [undoStack, setUndoStack] =
-    useState<StitchHistoryEntry[]>([]);
+  const [
+    fabricType,
+    setFabricType,
+  ] =
+    useState("aida");
 
-  const [redoStack, setRedoStack] =
-    useState<StitchHistoryEntry[]>([]);
+  const [
+    fabricCount,
+    setFabricCount,
+  ] =
+    useState(14);
+
+  const [
+    fabricColor,
+    setFabricColor,
+  ] =
+    useState("#ffffff");
+
+  const [
+    selectedColorId,
+    setSelectedColorId,
+  ] = useState(
+    internalPalette[0].id,
+  );
+
+  const [
+    selectedTool,
+    setSelectedTool,
+  ] =
+    useState<EditorTool>(
+      "stitch",
+    );
+
+  const [
+    zoom,
+    setZoom,
+  ] =
+    useState(1);
+
+  const [
+    isPanning,
+    setIsPanning,
+  ] =
+    useState(false);
+
+  const [
+    undoStack,
+    setUndoStack,
+  ] =
+    useState<
+      StitchHistoryEntry[]
+    >([]);
+
+  const [
+    redoStack,
+    setRedoStack,
+  ] =
+    useState<
+      StitchHistoryEntry[]
+    >([]);
 
   const activePalette =
-    pattern && pattern.palette.length > 0
+    pattern &&
+    pattern.palette.length > 0
       ? pattern.palette
       : internalPalette;
 
   const selectedThread =
     activePalette.find(
-      (thread) => thread.id === selectedColorId,
-    ) ?? activePalette[0];
+      (thread) =>
+        thread.id ===
+        selectedColorId,
+    ) ??
+    activePalette[0];
 
   function openNewPatternDialog() {
-    setName("Mi patrón");
+    setName(
+      "Mi patrón",
+    );
+
     setWidth(100);
     setHeight(80);
-    setFabricType("aida");
+
+    setFabricType(
+      "aida",
+    );
+
     setFabricCount(14);
-    setFabricColor("#ffffff");
-    setShowNewPattern(true);
+
+    setFabricColor(
+      "#ffffff",
+    );
+
+    setShowNewPattern(
+      true,
+    );
   }
 
   function createPattern() {
@@ -86,89 +208,141 @@ export default function Home() {
       alert(
         "Revisa los datos del patrón. Ancho, alto y count deben ser válidos.",
       );
+
       return;
     }
 
-    const now = new Date().toISOString();
+    const now =
+      new Date().toISOString();
 
-    const newPattern: Pattern = {
-      version: "1.0",
-      id: crypto.randomUUID(),
-      name: name.trim(),
-      width,
-      height,
-      fabric: {
-        type: fabricType,
-        count: fabricCount,
-        color: fabricColor,
-      },
-      palette: internalPalette,
-      stitches: [],
-      metadata: {
-        createdAt: now,
-        updatedAt: now,
-      },
-    };
+    const newPattern: Pattern =
+      {
+        version: "1.0",
 
-    setPattern(newPattern);
-    setSelectedColorId(internalPalette[0].id);
-    setSelectedTool("stitch");
-    setZoom(1);
-    setUndoStack([]);
-    setRedoStack([]);
-    setShowNewPattern(false);
-  }
+        id:
+          crypto.randomUUID(),
 
-  function updatePatternCell(
-    currentPattern: Pattern,
-    x: number,
-    y: number,
-    stitch: Stitch | null,
-  ): Pattern {
-    const remainingStitches = currentPattern.stitches.filter(
-      (item) => !(item.x === x && item.y === y),
+        name:
+          name.trim(),
+
+        width,
+        height,
+
+        fabric: {
+          type:
+            fabricType,
+
+          count:
+            fabricCount,
+
+          color:
+            fabricColor,
+        },
+
+        palette:
+          internalPalette,
+
+        stitches: [],
+
+        metadata: {
+          createdAt: now,
+          updatedAt: now,
+        },
+      };
+
+    setPattern(
+      newPattern,
     );
 
-    return {
-      ...currentPattern,
-      stitches: stitch
-        ? [...remainingStitches, stitch]
-        : remainingStitches,
-      metadata: {
-        ...currentPattern.metadata,
-        updatedAt: new Date().toISOString(),
-      },
-    };
+    setSelectedColorId(
+      internalPalette[0].id,
+    );
+
+    setSelectedTool(
+      "stitch",
+    );
+
+    setZoom(1);
+
+    setUndoStack([]);
+
+    setRedoStack([]);
+
+    setShowNewPattern(
+      false,
+    );
   }
 
-  function addHistoryEntry(entry: StitchHistoryEntry) {
-    setUndoStack((current) => [...current, entry]);
-    setRedoStack([]);
+  function addHistoryEntry(
+    entry: StitchHistoryEntry,
+  ) {
+    const history =
+      recordHistoryEntry(
+        undoStack,
+        entry,
+      );
+
+    setUndoStack(
+      history.undoStack,
+    );
+
+    setRedoStack(
+      history.redoStack,
+    );
   }
 
   function handleCanvasClick(
-    event: React.MouseEvent<HTMLCanvasElement>,
+    event:
+      React.MouseEvent<HTMLCanvasElement>,
   ) {
-    if (!pattern || selectedTool === "pan") {
+    if (
+      !pattern ||
+      selectedTool === "pan"
+    ) {
       return;
     }
 
-    const canvas = canvasRef.current;
+    const canvas =
+      canvasRef.current;
 
     if (!canvas) {
       return;
     }
 
-    const rect = canvas.getBoundingClientRect();
+    const rect =
+      canvas.getBoundingClientRect();
 
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
+    const scaleX =
+      canvas.width /
+      rect.width;
 
-    const mouseX = (event.clientX - rect.left) * scaleX;
-    const mouseY = (event.clientY - rect.top) * scaleY;
+    const scaleY =
+      canvas.height /
+      rect.height;
 
-    const x = Math.floor(mouseX / CELL_SIZE);
-    const y = Math.floor(mouseY / CELL_SIZE);
+    const mouseX =
+      (
+        event.clientX -
+        rect.left
+      ) * scaleX;
+
+    const mouseY =
+      (
+        event.clientY -
+        rect.top
+      ) * scaleY;
+
+    const x =
+      Math.floor(
+        mouseX /
+          CELL_SIZE,
+      );
+
+    const y =
+      Math.floor(
+        mouseY /
+          CELL_SIZE,
+      );
 
     if (
       x < 0 ||
@@ -180,23 +354,31 @@ export default function Home() {
     }
 
     const existingStitch =
-      pattern.stitches.find(
-        (stitch) =>
-          stitch.x === x &&
-          stitch.y === y,
-      ) ?? null;
+      getStitchAt(
+        pattern,
+        x,
+        y,
+      );
 
-    if (selectedTool === "erase") {
-      if (!existingStitch) {
+    if (
+      selectedTool ===
+      "erase"
+    ) {
+      if (
+        !existingStitch
+      ) {
         return;
       }
 
-      const historyEntry: StitchHistoryEntry = {
-        x,
-        y,
-        before: existingStitch,
-        after: null,
-      };
+      const historyEntry:
+        StitchHistoryEntry =
+        {
+          x,
+          y,
+          before:
+            existingStitch,
+          after: null,
+        };
 
       setPattern(
         updatePatternCell(
@@ -207,32 +389,46 @@ export default function Home() {
         ),
       );
 
-      addHistoryEntry(historyEntry);
+      addHistoryEntry(
+        historyEntry,
+      );
 
       return;
     }
 
-    const newStitch: Stitch = {
-      x,
-      y,
-      colorId: selectedColorId,
-      type: "full",
-    };
+    const newStitch:
+      Stitch = {
+        x,
+        y,
+
+        colorId:
+          selectedColorId,
+
+        type: "full",
+      };
 
     if (
       existingStitch &&
-      existingStitch.colorId === newStitch.colorId &&
-      existingStitch.type === newStitch.type
+      existingStitch.colorId ===
+        newStitch.colorId &&
+      existingStitch.type ===
+        newStitch.type
     ) {
       return;
     }
 
-    const historyEntry: StitchHistoryEntry = {
-      x,
-      y,
-      before: existingStitch,
-      after: newStitch,
-    };
+    const historyEntry:
+      StitchHistoryEntry =
+      {
+        x,
+        y,
+
+        before:
+          existingStitch,
+
+        after:
+          newStitch,
+      };
 
     setPattern(
       updatePatternCell(
@@ -243,68 +439,88 @@ export default function Home() {
       ),
     );
 
-    addHistoryEntry(historyEntry);
+    addHistoryEntry(
+      historyEntry,
+    );
   }
 
   function handleUndo() {
-    if (!pattern || undoStack.length === 0) {
+    if (!pattern) {
       return;
     }
 
-    const entry =
-      undoStack[undoStack.length - 1];
+    const result =
+      undoPatternChange(
+        pattern,
+        undoStack,
+        redoStack,
+      );
+
+    if (!result) {
+      return;
+    }
 
     setPattern(
-      updatePatternCell(
-        pattern,
-        entry.x,
-        entry.y,
-        entry.before,
-      ),
+      result.pattern,
     );
 
     setUndoStack(
-      (current) => current.slice(0, -1),
+      result.undoStack,
     );
 
     setRedoStack(
-      (current) => [...current, entry],
+      result.redoStack,
     );
   }
 
   function handleRedo() {
-    if (!pattern || redoStack.length === 0) {
+    if (!pattern) {
       return;
     }
 
-    const entry =
-      redoStack[redoStack.length - 1];
+    const result =
+      redoPatternChange(
+        pattern,
+        undoStack,
+        redoStack,
+      );
+
+    if (!result) {
+      return;
+    }
 
     setPattern(
-      updatePatternCell(
-        pattern,
-        entry.x,
-        entry.y,
-        entry.after,
-      ),
-    );
-
-    setRedoStack(
-      (current) => current.slice(0, -1),
+      result.pattern,
     );
 
     setUndoStack(
-      (current) => [...current, entry],
+      result.undoStack,
+    );
+
+    setRedoStack(
+      result.redoStack,
     );
   }
 
-  function sanitizeFilename(value: string) {
-    const sanitized = value
-      .trim()
-      .replace(/[<>:"/\\|?*]+/g, "-")
-      .replace(/\s+/g, "-");
+  function sanitizeFilename(
+    value: string,
+  ) {
+    const sanitized =
+      value
+        .trim()
+        .replace(
+          /[<>:"/\\|?*]+/g,
+          "-",
+        )
+        .replace(
+          /\s+/g,
+          "-",
+        );
 
-    return sanitized || "pattern";
+    return (
+      sanitized ||
+      "pattern"
+    );
   }
 
   function savePattern() {
@@ -312,42 +528,67 @@ export default function Home() {
       return;
     }
 
-    const patternToSave: Pattern = {
-      ...pattern,
-      metadata: {
-        ...pattern.metadata,
-        updatedAt: new Date().toISOString(),
-      },
-    };
+    const patternToSave:
+      Pattern = {
+        ...pattern,
 
-    setPattern(patternToSave);
+        metadata: {
+          ...pattern.metadata,
 
-    const json = JSON.stringify(
+          updatedAt:
+            new Date()
+              .toISOString(),
+        },
+      };
+
+    setPattern(
       patternToSave,
-      null,
-      2,
     );
 
-    const blob = new Blob([json], {
-      type: "application/json",
-    });
+    const json =
+      JSON.stringify(
+        patternToSave,
+        null,
+        2,
+      );
 
-    const url = URL.createObjectURL(blob);
+    const blob =
+      new Blob(
+        [json],
+        {
+          type:
+            "application/json",
+        },
+      );
 
-    const link = document.createElement("a");
+    const url =
+      URL.createObjectURL(
+        blob,
+      );
+
+    const link =
+      document.createElement(
+        "a",
+      );
 
     link.href = url;
 
     link.download =
-      `${sanitizeFilename(patternToSave.name)}.stitch`;
+      `${sanitizeFilename(
+        patternToSave.name,
+      )}.stitch`;
 
-    document.body.appendChild(link);
+    document.body.appendChild(
+      link,
+    );
 
     link.click();
 
     link.remove();
 
-    URL.revokeObjectURL(url);
+    URL.revokeObjectURL(
+      url,
+    );
   }
 
   function openPatternFileSelector() {
@@ -355,25 +596,35 @@ export default function Home() {
   }
 
   async function handleOpenPattern(
-    event: React.ChangeEvent<HTMLInputElement>,
+    event:
+      React.ChangeEvent<HTMLInputElement>,
   ) {
-    const file = event.target.files?.[0];
+    const file =
+      event.target.files?.[0];
 
     if (!file) {
       return;
     }
 
     try {
-      const text = await file.text();
+      const text =
+        await file.text();
 
-      const data: unknown = JSON.parse(text);
+      const data:
+        unknown =
+        JSON.parse(text);
 
-      if (!isValidPattern(data)) {
+      if (
+        !isValidPattern(
+          data,
+        )
+      ) {
         alert(
           "El archivo no es un patrón StitchDesigner válido o utiliza una versión no compatible.",
         );
 
-        event.target.value = "";
+        event.target.value =
+          "";
 
         return;
       }
@@ -382,12 +633,18 @@ export default function Home() {
 
       setSelectedColorId(
         data.palette[0]?.id ??
-          internalPalette[0].id,
+          internalPalette[0]
+            .id,
       );
 
-      setSelectedTool("stitch");
+      setSelectedTool(
+        "stitch",
+      );
+
       setZoom(1);
+
       setUndoStack([]);
+
       setRedoStack([]);
     } catch {
       alert(
@@ -395,7 +652,8 @@ export default function Home() {
       );
     }
 
-    event.target.value = "";
+    event.target.value =
+      "";
   }
 
   function exportPatternAsPng() {
@@ -403,7 +661,8 @@ export default function Home() {
       return;
     }
 
-    const canvas = canvasRef.current;
+    const canvas =
+      canvasRef.current;
 
     if (!canvas) {
       return;
@@ -420,45 +679,66 @@ export default function Home() {
         }
 
         const url =
-          URL.createObjectURL(blob);
+          URL.createObjectURL(
+            blob,
+          );
 
         const link =
-          document.createElement("a");
+          document.createElement(
+            "a",
+          );
 
         link.href = url;
 
         link.download =
-          `${sanitizeFilename(pattern.name)}.png`;
+          `${sanitizeFilename(
+            pattern.name,
+          )}.png`;
 
-        document.body.appendChild(link);
+        document.body
+          .appendChild(
+            link,
+          );
 
         link.click();
 
         link.remove();
 
-        URL.revokeObjectURL(url);
+        URL.revokeObjectURL(
+          url,
+        );
       },
       "image/png",
     );
   }
 
-  function changeZoom(amount: number) {
+  function changeZoom(
+    amount: number,
+  ) {
     if (!pattern) {
       return;
     }
 
-    setZoom((currentZoom) => {
-      const newZoom =
-        currentZoom + amount;
+    setZoom(
+      (currentZoom) => {
+        const newZoom =
+          currentZoom +
+          amount;
 
-      return Math.min(
-        MAX_ZOOM,
-        Math.max(
-          MIN_ZOOM,
-          Math.round(newZoom * 100) / 100,
-        ),
-      );
-    });
+        return Math.min(
+          MAX_ZOOM,
+
+          Math.max(
+            MIN_ZOOM,
+
+            Math.round(
+              newZoom *
+                100,
+            ) / 100,
+          ),
+        );
+      },
+    );
   }
 
   function resetZoom() {
@@ -470,7 +750,8 @@ export default function Home() {
   }
 
   function handleWheel(
-    event: React.WheelEvent<HTMLElement>,
+    event:
+      React.WheelEvent<HTMLElement>,
   ) {
     if (!pattern) {
       return;
@@ -478,17 +759,27 @@ export default function Home() {
 
     event.preventDefault();
 
-    if (event.deltaY < 0) {
-      changeZoom(0.1);
+    if (
+      event.deltaY < 0
+    ) {
+      changeZoom(
+        0.1,
+      );
     } else {
-      changeZoom(-0.1);
+      changeZoom(
+        -0.1,
+      );
     }
   }
 
   function handlePanStart(
-    event: React.MouseEvent<HTMLElement>,
+    event:
+      React.MouseEvent<HTMLElement>,
   ) {
-    if (selectedTool !== "pan") {
+    if (
+      selectedTool !==
+      "pan"
+    ) {
       return;
     }
 
@@ -499,24 +790,34 @@ export default function Home() {
       return;
     }
 
-    setIsPanning(true);
+    setIsPanning(
+      true,
+    );
 
-    panStartRef.current = {
-      x: event.clientX,
-      y: event.clientY,
-      scrollLeft:
-        workspace.scrollLeft,
-      scrollTop:
-        workspace.scrollTop,
-    };
+    panStartRef.current =
+      {
+        x:
+          event.clientX,
+
+        y:
+          event.clientY,
+
+        scrollLeft:
+          workspace.scrollLeft,
+
+        scrollTop:
+          workspace.scrollTop,
+      };
   }
 
   function handlePanMove(
-    event: React.MouseEvent<HTMLElement>,
+    event:
+      React.MouseEvent<HTMLElement>,
   ) {
     if (
       !isPanning ||
-      selectedTool !== "pan"
+      selectedTool !==
+        "pan"
     ) {
       return;
     }
@@ -530,201 +831,60 @@ export default function Home() {
 
     const deltaX =
       event.clientX -
-      panStartRef.current.x;
+      panStartRef.current
+        .x;
 
     const deltaY =
       event.clientY -
-      panStartRef.current.y;
+      panStartRef.current
+        .y;
 
     workspace.scrollLeft =
-      panStartRef.current.scrollLeft -
+      panStartRef.current
+        .scrollLeft -
       deltaX;
 
     workspace.scrollTop =
-      panStartRef.current.scrollTop -
+      panStartRef.current
+        .scrollTop -
       deltaY;
   }
 
   function handlePanEnd() {
-    setIsPanning(false);
+    setIsPanning(
+      false,
+    );
   }
 
   useEffect(() => {
-    const canvas = canvasRef.current;
+    const canvas =
+      canvasRef.current;
 
-    if (!canvas || !pattern) {
+    if (
+      !canvas ||
+      !pattern
+    ) {
       return;
     }
 
-    const context =
-      canvas.getContext("2d");
-
-    if (!context) {
-      return;
-    }
-
-    const canvasWidth =
-      pattern.width * CELL_SIZE;
-
-    const canvasHeight =
-      pattern.height * CELL_SIZE;
-
-    canvas.width =
-      canvasWidth;
-
-    canvas.height =
-      canvasHeight;
-
-    context.clearRect(
-      0,
-      0,
-      canvasWidth,
-      canvasHeight,
+    renderPatternToCanvas(
+      canvas,
+      pattern,
     );
-
-    context.fillStyle =
-      pattern.fabric.color;
-
-    context.fillRect(
-      0,
-      0,
-      canvasWidth,
-      canvasHeight,
-    );
-
-    for (const stitch of pattern.stitches) {
-      const thread =
-        pattern.palette.find(
-          (item) =>
-            item.id === stitch.colorId,
-        );
-
-      if (!thread) {
-        continue;
-      }
-
-      context.fillStyle =
-        thread.rgb;
-
-      context.fillRect(
-        stitch.x * CELL_SIZE + 1,
-        stitch.y * CELL_SIZE + 1,
-        CELL_SIZE - 1,
-        CELL_SIZE - 1,
-      );
-    }
-
-    context.strokeStyle =
-      "#cbd5e1";
-
-    context.lineWidth = 1;
-
-    for (
-      let x = 0;
-      x <= pattern.width;
-      x += 1
-    ) {
-      const pixelX =
-        x * CELL_SIZE + 0.5;
-
-      context.beginPath();
-
-      context.moveTo(
-        pixelX,
-        0,
-      );
-
-      context.lineTo(
-        pixelX,
-        canvasHeight,
-      );
-
-      context.stroke();
-    }
-
-    for (
-      let y = 0;
-      y <= pattern.height;
-      y += 1
-    ) {
-      const pixelY =
-        y * CELL_SIZE + 0.5;
-
-      context.beginPath();
-
-      context.moveTo(
-        0,
-        pixelY,
-      );
-
-      context.lineTo(
-        canvasWidth,
-        pixelY,
-      );
-
-      context.stroke();
-    }
-
-    context.strokeStyle =
-      "#94a3b8";
-
-    context.lineWidth = 1.5;
-
-    for (
-      let x = 0;
-      x <= pattern.width;
-      x += 10
-    ) {
-      const pixelX =
-        x * CELL_SIZE + 0.5;
-
-      context.beginPath();
-
-      context.moveTo(
-        pixelX,
-        0,
-      );
-
-      context.lineTo(
-        pixelX,
-        canvasHeight,
-      );
-
-      context.stroke();
-    }
-
-    for (
-      let y = 0;
-      y <= pattern.height;
-      y += 10
-    ) {
-      const pixelY =
-        y * CELL_SIZE + 0.5;
-
-      context.beginPath();
-
-      context.moveTo(
-        0,
-        pixelY,
-      );
-
-      context.lineTo(
-        canvasWidth,
-        pixelY,
-      );
-
-      context.stroke();
-    }
   }, [pattern]);
 
   const displayedWidth =
-    pattern?.width ?? 100;
+    pattern?.width ??
+    100;
 
   const displayedHeight =
-    pattern?.height ?? 80;
+    pattern?.height ??
+    80;
 
   const displayedStitches =
-    pattern?.stitches.length ?? 0;
+    pattern
+      ?.stitches
+      .length ?? 0;
 
   const displayedColors =
     pattern
@@ -748,39 +908,53 @@ export default function Home() {
 
               {pattern && (
                 <div className="text-xs text-slate-500">
-                  {pattern.name}
+                  {
+                    pattern.name
+                  }
                 </div>
               )}
             </div>
 
             <nav className="flex items-center gap-2">
               <button
-                onClick={openNewPatternDialog}
+                onClick={
+                  openNewPatternDialog
+                }
                 className="rounded-md px-3 py-2 text-sm hover:bg-slate-100"
               >
                 Nuevo
               </button>
 
               <button
-                onClick={openPatternFileSelector}
+                onClick={
+                  openPatternFileSelector
+                }
                 className="rounded-md px-3 py-2 text-sm hover:bg-slate-100"
               >
                 Abrir
               </button>
 
               <button
-                onClick={savePattern}
-                disabled={!pattern}
+                onClick={
+                  savePattern
+                }
+                disabled={
+                  !pattern
+                }
                 className="rounded-md px-3 py-2 text-sm hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Guardar
               </button>
 
               <input
-                ref={fileInputRef}
+                ref={
+                  fileInputRef
+                }
                 type="file"
                 accept=".stitch,application/json"
-                onChange={handleOpenPattern}
+                onChange={
+                  handleOpenPattern
+                }
                 className="hidden"
               />
             </nav>
@@ -788,10 +962,13 @@ export default function Home() {
 
           <div className="flex items-center gap-2">
             <button
-              onClick={handleUndo}
+              onClick={
+                handleUndo
+              }
               disabled={
                 !pattern ||
-                undoStack.length === 0
+                undoStack.length ===
+                  0
               }
               className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
             >
@@ -799,10 +976,13 @@ export default function Home() {
             </button>
 
             <button
-              onClick={handleRedo}
+              onClick={
+                handleRedo
+              }
               disabled={
                 !pattern ||
-                redoStack.length === 0
+                redoStack.length ===
+                  0
               }
               className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
             >
@@ -810,8 +990,12 @@ export default function Home() {
             </button>
 
             <button
-              onClick={exportPatternAsPng}
-              disabled={!pattern}
+              onClick={
+                exportPatternAsPng
+              }
+              disabled={
+                !pattern
+              }
               className="rounded-md bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Exportar PNG
@@ -828,10 +1012,13 @@ export default function Home() {
             <div className="space-y-2">
               <button
                 onClick={() =>
-                  setSelectedTool("stitch")
+                  setSelectedTool(
+                    "stitch",
+                  )
                 }
                 className={`w-full rounded-lg px-3 py-3 text-left text-sm ${
-                  selectedTool === "stitch"
+                  selectedTool ===
+                  "stitch"
                     ? "bg-slate-900 text-white"
                     : "border border-slate-300 hover:bg-slate-50"
                 }`}
@@ -841,10 +1028,13 @@ export default function Home() {
 
               <button
                 onClick={() =>
-                  setSelectedTool("erase")
+                  setSelectedTool(
+                    "erase",
+                  )
                 }
                 className={`w-full rounded-lg px-3 py-3 text-left text-sm ${
-                  selectedTool === "erase"
+                  selectedTool ===
+                  "erase"
                     ? "bg-slate-900 text-white"
                     : "border border-slate-300 hover:bg-slate-50"
                 }`}
@@ -854,10 +1044,13 @@ export default function Home() {
 
               <button
                 onClick={() =>
-                  setSelectedTool("pan")
+                  setSelectedTool(
+                    "pan",
+                  )
                 }
                 className={`w-full rounded-lg px-3 py-3 text-left text-sm ${
-                  selectedTool === "pan"
+                  selectedTool ===
+                  "pan"
                     ? "bg-slate-900 text-white"
                     : "border border-slate-300 hover:bg-slate-50"
                 }`}
@@ -872,22 +1065,43 @@ export default function Home() {
               </div>
 
               <div className="mt-1 text-sm font-medium">
-                {selectedTool === "stitch" && "Puntada"}
-                {selectedTool === "erase" && "Borrar"}
-                {selectedTool === "pan" && "Mover"}
+                {selectedTool ===
+                  "stitch" &&
+                  "Puntada"}
+
+                {selectedTool ===
+                  "erase" &&
+                  "Borrar"}
+
+                {selectedTool ===
+                  "pan" &&
+                  "Mover"}
               </div>
             </div>
           </aside>
 
           <section
-            ref={workspaceRef}
-            onWheel={handleWheel}
-            onMouseDown={handlePanStart}
-            onMouseMove={handlePanMove}
-            onMouseUp={handlePanEnd}
-            onMouseLeave={handlePanEnd}
+            ref={
+              workspaceRef
+            }
+            onWheel={
+              handleWheel
+            }
+            onMouseDown={
+              handlePanStart
+            }
+            onMouseMove={
+              handlePanMove
+            }
+            onMouseUp={
+              handlePanEnd
+            }
+            onMouseLeave={
+              handlePanEnd
+            }
             className={`overflow-auto bg-slate-200 p-6 select-none ${
-              selectedTool === "pan"
+              selectedTool ===
+              "pan"
                 ? isPanning
                   ? "cursor-grabbing"
                   : "cursor-grab"
@@ -904,14 +1118,19 @@ export default function Home() {
               {pattern && (
                 <div className="inline-block overflow-hidden rounded-lg border border-slate-400 bg-white shadow-sm">
                   <canvas
-                    ref={canvasRef}
-                    onClick={handleCanvasClick}
+                    ref={
+                      canvasRef
+                    }
+                    onClick={
+                      handleCanvasClick
+                    }
                     style={{
                       width: `${
                         pattern.width *
                         CELL_SIZE *
                         zoom
                       }px`,
+
                       height: `${
                         pattern.height *
                         CELL_SIZE *
@@ -919,9 +1138,11 @@ export default function Home() {
                       }px`,
                     }}
                     className={`block ${
-                      selectedTool === "stitch"
+                      selectedTool ===
+                      "stitch"
                         ? "cursor-crosshair"
-                        : selectedTool === "erase"
+                        : selectedTool ===
+                            "erase"
                           ? "cursor-pointer"
                           : ""
                     }`}
@@ -947,17 +1168,25 @@ export default function Home() {
                   className="h-8 w-8 rounded-md border border-slate-300"
                   style={{
                     backgroundColor:
-                      selectedThread.rgb,
+                      selectedThread
+                        .rgb,
                   }}
                 />
 
                 <div>
                   <div className="text-sm font-medium">
-                    {selectedThread.name}
+                    {
+                      selectedThread
+                        .name
+                    }
                   </div>
 
                   <div className="text-xs text-slate-500">
-                    Símbolo: {selectedThread.symbol}
+                    Símbolo:{" "}
+                    {
+                      selectedThread
+                        .symbol
+                    }
                   </div>
                 </div>
               </div>
@@ -965,14 +1194,21 @@ export default function Home() {
 
             <div className="space-y-2">
               {activePalette.map(
-                (thread) => (
+                (
+                  thread,
+                ) => (
                   <button
-                    key={thread.id}
+                    key={
+                      thread.id
+                    }
                     onClick={() =>
-                      setSelectedColorId(thread.id)
+                      setSelectedColorId(
+                        thread.id,
+                      )
                     }
                     className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left ${
-                      selectedColorId === thread.id
+                      selectedColorId ===
+                      thread.id
                         ? "border-slate-900 bg-slate-100"
                         : "border-slate-200 hover:bg-slate-50"
                     }`}
@@ -986,11 +1222,15 @@ export default function Home() {
                     />
 
                     <span className="flex-1 text-sm">
-                      {thread.name}
+                      {
+                        thread.name
+                      }
                     </span>
 
                     <span className="text-xs text-slate-500">
-                      {thread.symbol}
+                      {
+                        thread.symbol
+                      }
                     </span>
                   </button>
                 ),
@@ -1002,26 +1242,42 @@ export default function Home() {
         <footer className="flex h-10 items-center justify-between border-t border-slate-300 bg-white px-5 text-xs text-slate-600">
           <div className="flex items-center gap-6">
             <span>
-              {displayedWidth} × {displayedHeight} puntadas
+              {
+                displayedWidth
+              }{" "}
+              ×{" "}
+              {
+                displayedHeight
+              }{" "}
+              puntadas
             </span>
 
             <span>
-              {displayedStitches} puntadas
+              {
+                displayedStitches
+              }{" "}
+              puntadas
             </span>
 
             <span>
-              {displayedColors} colores
+              {
+                displayedColors
+              }{" "}
+              colores
             </span>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() =>
-                changeZoom(-0.25)
+                changeZoom(
+                  -0.25,
+                )
               }
               disabled={
                 !pattern ||
-                zoom <= MIN_ZOOM
+                zoom <=
+                  MIN_ZOOM
               }
               className="flex h-7 w-7 items-center justify-center rounded border border-slate-300 bg-white text-sm disabled:cursor-not-allowed disabled:opacity-40"
             >
@@ -1029,21 +1285,35 @@ export default function Home() {
             </button>
 
             <button
-              onClick={resetZoom}
-              disabled={!pattern}
+              onClick={
+                resetZoom
+              }
+              disabled={
+                !pattern
+              }
               className="min-w-[90px] rounded px-2 py-1 hover:bg-slate-100 disabled:opacity-40"
               title="Volver a 100%"
             >
-              Zoom {Math.round(zoom * 100)}%
+              Zoom{" "}
+              {
+                Math.round(
+                  zoom *
+                    100,
+                )
+              }
+              %
             </button>
 
             <button
               onClick={() =>
-                changeZoom(0.25)
+                changeZoom(
+                  0.25,
+                )
               }
               disabled={
                 !pattern ||
-                zoom >= MAX_ZOOM
+                zoom >=
+                  MAX_ZOOM
               }
               className="flex h-7 w-7 items-center justify-center rounded border border-slate-300 bg-white text-sm disabled:cursor-not-allowed disabled:opacity-40"
             >
@@ -1074,9 +1344,17 @@ export default function Home() {
 
                 <input
                   type="text"
-                  value={name}
-                  onChange={(event) =>
-                    setName(event.target.value)
+                  value={
+                    name
+                  }
+                  onChange={(
+                    event,
+                  ) =>
+                    setName(
+                      event
+                        .target
+                        .value,
+                    )
                   }
                   className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
                 />
@@ -1092,10 +1370,18 @@ export default function Home() {
                     <input
                       type="number"
                       min="1"
-                      value={width}
-                      onChange={(event) =>
+                      value={
+                        width
+                      }
+                      onChange={(
+                        event,
+                      ) =>
                         setWidth(
-                          Number(event.target.value),
+                          Number(
+                            event
+                              .target
+                              .value,
+                          ),
                         )
                       }
                       className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
@@ -1116,10 +1402,18 @@ export default function Home() {
                     <input
                       type="number"
                       min="1"
-                      value={height}
-                      onChange={(event) =>
+                      value={
+                        height
+                      }
+                      onChange={(
+                        event,
+                      ) =>
                         setHeight(
-                          Number(event.target.value),
+                          Number(
+                            event
+                              .target
+                              .value,
+                          ),
                         )
                       }
                       className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
@@ -1144,10 +1438,16 @@ export default function Home() {
                     </label>
 
                     <select
-                      value={fabricType}
-                      onChange={(event) =>
+                      value={
+                        fabricType
+                      }
+                      onChange={(
+                        event,
+                      ) =>
                         setFabricType(
-                          event.target.value,
+                          event
+                            .target
+                            .value,
                         )
                       }
                       className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
@@ -1174,10 +1474,18 @@ export default function Home() {
                     <input
                       type="number"
                       min="1"
-                      value={fabricCount}
-                      onChange={(event) =>
+                      value={
+                        fabricCount
+                      }
+                      onChange={(
+                        event,
+                      ) =>
                         setFabricCount(
-                          Number(event.target.value),
+                          Number(
+                            event
+                              .target
+                              .value,
+                          ),
                         )
                       }
                       className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
@@ -1191,10 +1499,16 @@ export default function Home() {
 
                     <input
                       type="color"
-                      value={fabricColor}
-                      onChange={(event) =>
+                      value={
+                        fabricColor
+                      }
+                      onChange={(
+                        event,
+                      ) =>
                         setFabricColor(
-                          event.target.value,
+                          event
+                            .target
+                            .value,
                         )
                       }
                       className="h-10 w-full cursor-pointer rounded-md border border-slate-300 bg-white p-1"
@@ -1207,7 +1521,9 @@ export default function Home() {
             <div className="mt-6 flex justify-end gap-3">
               <button
                 onClick={() =>
-                  setShowNewPattern(false)
+                  setShowNewPattern(
+                    false,
+                  )
                 }
                 className="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50"
               >
@@ -1215,7 +1531,9 @@ export default function Home() {
               </button>
 
               <button
-                onClick={createPattern}
+                onClick={
+                  createPattern
+                }
                 className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-700"
               >
                 Crear patrón
