@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type StitchType = "full";
 
@@ -78,9 +78,12 @@ const internalPalette: Thread[] = [
   },
 ];
 
-export default function Home() {
-  const [showNewPattern, setShowNewPattern] = useState(false);
+const CELL_SIZE = 20;
 
+export default function Home() {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  const [showNewPattern, setShowNewPattern] = useState(false);
   const [pattern, setPattern] = useState<Pattern | null>(null);
 
   const [name, setName] = useState("Mi patrón");
@@ -116,7 +119,9 @@ export default function Home() {
       height <= 0 ||
       fabricCount <= 0
     ) {
-      alert("Revisa los datos del patrón. Ancho, alto y count deben ser válidos.");
+      alert(
+        "Revisa los datos del patrón. Ancho, alto y count deben ser válidos.",
+      );
       return;
     }
 
@@ -145,6 +150,73 @@ export default function Home() {
     setSelectedColorId(internalPalette[0].id);
     setShowNewPattern(false);
   }
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+
+    if (!canvas || !pattern) {
+      return;
+    }
+
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      return;
+    }
+
+    const canvasWidth = pattern.width * CELL_SIZE;
+    const canvasHeight = pattern.height * CELL_SIZE;
+
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
+
+    context.clearRect(0, 0, canvasWidth, canvasHeight);
+
+    context.fillStyle = pattern.fabric.color;
+    context.fillRect(0, 0, canvasWidth, canvasHeight);
+
+    context.strokeStyle = "#cbd5e1";
+    context.lineWidth = 1;
+
+    for (let x = 0; x <= pattern.width; x += 1) {
+      const pixelX = x * CELL_SIZE + 0.5;
+
+      context.beginPath();
+      context.moveTo(pixelX, 0);
+      context.lineTo(pixelX, canvasHeight);
+      context.stroke();
+    }
+
+    for (let y = 0; y <= pattern.height; y += 1) {
+      const pixelY = y * CELL_SIZE + 0.5;
+
+      context.beginPath();
+      context.moveTo(0, pixelY);
+      context.lineTo(canvasWidth, pixelY);
+      context.stroke();
+    }
+
+    context.strokeStyle = "#94a3b8";
+    context.lineWidth = 1.5;
+
+    for (let x = 0; x <= pattern.width; x += 10) {
+      const pixelX = x * CELL_SIZE + 0.5;
+
+      context.beginPath();
+      context.moveTo(pixelX, 0);
+      context.lineTo(pixelX, canvasHeight);
+      context.stroke();
+    }
+
+    for (let y = 0; y <= pattern.height; y += 10) {
+      const pixelY = y * CELL_SIZE + 0.5;
+
+      context.beginPath();
+      context.moveTo(0, pixelY);
+      context.lineTo(canvasWidth, pixelY);
+      context.stroke();
+    }
+  }, [pattern]);
 
   const displayedWidth = pattern?.width ?? 100;
   const displayedHeight = pattern?.height ?? 80;
@@ -219,28 +291,22 @@ export default function Home() {
           </aside>
 
           <section className="overflow-auto bg-slate-200 p-6">
-            <div className="flex min-h-full items-center justify-center">
-              <div
-                className="relative h-[640px] w-[900px] overflow-hidden rounded-lg border border-slate-400 shadow-sm"
-                style={{
-                  backgroundColor: pattern?.fabric.color ?? "#ffffff",
-                }}
-              >
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    backgroundImage:
-                      "linear-gradient(to right, #e2e8f0 1px, transparent 1px), linear-gradient(to bottom, #e2e8f0 1px, transparent 1px)",
-                    backgroundSize: "20px 20px",
-                  }}
-                />
-
-                <div className="absolute left-4 top-4 rounded-md bg-white/90 px-3 py-2 text-xs text-slate-500 shadow-sm">
-                  {pattern
-                    ? `${pattern.name} — ${pattern.width} × ${pattern.height}`
-                    : "Canvas del patrón"}
+            <div className="min-h-full min-w-full">
+              {!pattern && (
+                <div className="flex h-full min-h-[640px] items-center justify-center text-sm text-slate-500">
+                  Crea un patrón nuevo para mostrar el Canvas.
                 </div>
-              </div>
+              )}
+
+              {pattern && (
+                <div className="inline-block overflow-hidden rounded-lg border border-slate-400 bg-white shadow-sm">
+                  <canvas
+                    ref={canvasRef}
+                    className="block"
+                    aria-label="Canvas del patrón"
+                  />
+                </div>
+              )}
             </div>
           </section>
 
