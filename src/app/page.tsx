@@ -93,6 +93,7 @@ const MAX_ZOOM = 4;
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const workspaceRef = useRef<HTMLElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const panStartRef = useRef({
     x: 0,
@@ -123,9 +124,14 @@ export default function Home() {
   const [undoStack, setUndoStack] = useState<StitchHistoryEntry[]>([]);
   const [redoStack, setRedoStack] = useState<StitchHistoryEntry[]>([]);
 
+  const activePalette =
+    pattern && pattern.palette.length > 0
+      ? pattern.palette
+      : internalPalette;
+
   const selectedThread =
-    internalPalette.find((thread) => thread.id === selectedColorId) ??
-    internalPalette[0];
+    activePalette.find((thread) => thread.id === selectedColorId) ??
+    activePalette[0];
 
   function openNewPatternDialog() {
     setName("Mi patrón");
@@ -177,10 +183,8 @@ export default function Home() {
     setSelectedColorId(internalPalette[0].id);
     setSelectedTool("stitch");
     setZoom(1);
-
     setUndoStack([]);
     setRedoStack([]);
-
     setShowNewPattern(false);
   }
 
@@ -208,9 +212,6 @@ export default function Home() {
 
   function addHistoryEntry(entry: StitchHistoryEntry) {
     setUndoStack((current) => [...current, entry]);
-
-    // Cuando se realiza una nueva acción manual,
-    // el historial Redo anterior deja de ser válido.
     setRedoStack([]);
   }
 
@@ -277,8 +278,6 @@ export default function Home() {
       type: "full",
     };
 
-    // Si la celda ya tiene exactamente esa misma puntada,
-    // no generamos una acción innecesaria en el historial.
     if (
       existingStitch &&
       existingStitch.colorId === newStitch.colorId &&
@@ -315,7 +314,6 @@ export default function Home() {
     );
 
     setUndoStack((current) => current.slice(0, -1));
-
     setRedoStack((current) => [...current, entry]);
   }
 
@@ -336,8 +334,215 @@ export default function Home() {
     );
 
     setRedoStack((current) => current.slice(0, -1));
-
     setUndoStack((current) => [...current, entry]);
+  }
+
+  function isValidHexColor(value: unknown): value is string {
+    return (
+      typeof value === "string" &&
+      /^#[0-9A-Fa-f]{6}$/.test(value)
+    );
+  }
+
+  function isValidDate(value: unknown): value is string {
+    return (
+      typeof value === "string" &&
+      !Number.isNaN(Date.parse(value))
+    );
+  }
+
+  function isValidPattern(value: unknown): value is Pattern {
+    if (typeof value !== "object" || value === null) {
+      return false;
+    }
+
+    const candidate = value as Partial<Pattern>;
+
+    if (
+      candidate.version !== "1.0" ||
+      typeof candidate.id !== "string" ||
+      candidate.id.trim() === "" ||
+      typeof candidate.name !== "string" ||
+      candidate.name.trim() === "" ||
+      !Number.isInteger(candidate.width) ||
+      !candidate.width ||
+      candidate.width <= 0 ||
+      !Number.isInteger(candidate.height) ||
+      !candidate.height ||
+      candidate.height <= 0
+    ) {
+      return false;
+    }
+
+    if (
+      typeof candidate.fabric !== "object" ||
+      candidate.fabric === null ||
+      typeof candidate.fabric.type !== "string" ||
+      typeof candidate.fabric.count !== "number" ||
+      candidate.fabric.count <= 0 ||
+      !isValidHexColor(candidate.fabric.color)
+    ) {
+      return false;
+    }
+
+    if (!Array.isArray(candidate.palette)) {
+      return false;
+    }
+
+    const threadIds = new Set<string>();
+
+    for (const thread of candidate.palette) {
+      if (
+        typeof thread !== "object" ||
+        thread === null ||
+        typeof thread.id !== "string" ||
+        thread.id.trim() === "" ||
+        typeof thread.name !== "string" ||
+        !isValidHexColor(thread.rgb) ||
+        typeof thread.symbol !== "string" ||
+        typeof thread.brand !== "string"
+      ) {
+        return false;
+      }
+
+      if (threadIds.has(thread.id)) {
+        return false;
+      }
+
+      threadIds.add(thread.id);
+    }
+
+    if (!Array.isArray(candidate.stitches)) {
+      return false;
+    }
+
+    const occupiedCells = new Set<string>();
+
+    for (const stitch of candidate.stitches) {
+      if (
+        typeof stitch !== "object" ||
+        stitch === null ||
+        !Number.isInteger(stitch.x) ||
+        !Number.isInteger(stitch.y) ||
+        stitch.x < 0 ||
+        stitch.y < 0 ||
+        stitch.x >= candidate.width ||
+        stitch.y >= candidate.height ||
+        stitch.type !== "full" ||
+        typeof stitch.colorId !== "string" ||
+        !threadIds.has(stitch.colorId)
+      ) {
+        return false;
+      }
+
+      const cellKey = `${stitch.x}:${stitch.y}`;
+
+      if (occupiedCells.has(cellKey)) {
+        return false;
+      }
+
+      occupiedCells.add(cellKey);
+    }
+
+    if (
+      typeof candidate.metadata !== "object" ||
+      candidate.metadata === null ||
+      !isValidDate(candidate.metadata.createdAt) ||
+      !isValidDate(candidate.metadata.updatedAt)
+    ) {
+      return false;
+    }
+
+    return true;
+  }
+
+  function sanitizeFilename(value: string) {
+    const sanitized = value
+      .trim()
+      .replace(/[<>:"/\\|?*]+/g, "-")
+      .replace(/\s+/g, "-");
+
+    return sanitized || "pattern";
+  }
+
+  function savePattern() {
+    if (!pattern) {
+      return;
+    }
+
+    const patternToSave: Pattern = {
+      ...pattern,
+      metadata: {
+        ...pattern.metadata,
+        updatedAt: new Date().toISOString(),
+      },
+    };
+
+    setPattern(patternToSave);
+
+    const json = JSON.stringify(patternToSave, null, 2);
+
+    const blob = new Blob([json], {
+      type: "application/json",
+    });
+
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = `${sanitizeFilename(patternToSave.name)}.stitch`;
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    URL.revokeObjectURL(url);
+  }
+
+  function openPatternFileSelector() {
+    fileInputRef.current?.click();
+  }
+
+  async function handleOpenPattern(
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    try {
+      const text = await file.text();
+      const data: unknown = JSON.parse(text);
+
+      if (!isValidPattern(data)) {
+        alert(
+          "El archivo no es un patrón StitchDesigner válido o utiliza una versión no compatible.",
+        );
+
+        event.target.value = "";
+        return;
+      }
+
+      setPattern(data);
+
+      setSelectedColorId(
+        data.palette[0]?.id ?? internalPalette[0].id,
+      );
+
+      setSelectedTool("stitch");
+      setZoom(1);
+      setUndoStack([]);
+      setRedoStack([]);
+    } catch {
+      alert(
+        "No se ha podido abrir el archivo. Comprueba que es un archivo .stitch válido.",
+      );
+    }
+
+    event.target.value = "";
   }
 
   function changeZoom(amount: number) {
@@ -544,13 +749,28 @@ export default function Home() {
                 Nuevo
               </button>
 
-              <button className="rounded-md px-3 py-2 text-sm hover:bg-slate-100">
+              <button
+                onClick={openPatternFileSelector}
+                className="rounded-md px-3 py-2 text-sm hover:bg-slate-100"
+              >
                 Abrir
               </button>
 
-              <button className="rounded-md px-3 py-2 text-sm hover:bg-slate-100">
+              <button
+                onClick={savePattern}
+                disabled={!pattern}
+                className="rounded-md px-3 py-2 text-sm hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+              >
                 Guardar
               </button>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".stitch,application/json"
+                onChange={handleOpenPattern}
+                className="hidden"
+              />
             </nav>
           </div>
 
@@ -659,12 +879,8 @@ export default function Home() {
                     ref={canvasRef}
                     onClick={handleCanvasClick}
                     style={{
-                      width: `${
-                        pattern.width * CELL_SIZE * zoom
-                      }px`,
-                      height: `${
-                        pattern.height * CELL_SIZE * zoom
-                      }px`,
+                      width: `${pattern.width * CELL_SIZE * zoom}px`,
+                      height: `${pattern.height * CELL_SIZE * zoom}px`,
                     }}
                     className={`block ${
                       selectedTool === "stitch"
@@ -711,7 +927,7 @@ export default function Home() {
             </div>
 
             <div className="space-y-2">
-              {internalPalette.map((thread) => (
+              {activePalette.map((thread) => (
                 <button
                   key={thread.id}
                   onClick={() =>
@@ -894,9 +1110,7 @@ export default function Home() {
                       min="1"
                       value={fabricCount}
                       onChange={(event) =>
-                        setFabricCount(
-                          Number(event.target.value),
-                        )
+                        setFabricCount(Number(event.target.value))
                       }
                       className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
                     />
