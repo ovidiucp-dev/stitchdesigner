@@ -121,8 +121,11 @@ export default function Home() {
   const [zoom, setZoom] = useState(1);
   const [isPanning, setIsPanning] = useState(false);
 
-  const [undoStack, setUndoStack] = useState<StitchHistoryEntry[]>([]);
-  const [redoStack, setRedoStack] = useState<StitchHistoryEntry[]>([]);
+  const [undoStack, setUndoStack] =
+    useState<StitchHistoryEntry[]>([]);
+
+  const [redoStack, setRedoStack] =
+    useState<StitchHistoryEntry[]>([]);
 
   const activePalette =
     pattern && pattern.palette.length > 0
@@ -130,8 +133,9 @@ export default function Home() {
       : internalPalette;
 
   const selectedThread =
-    activePalette.find((thread) => thread.id === selectedColorId) ??
-    activePalette[0];
+    activePalette.find(
+      (thread) => thread.id === selectedColorId,
+    ) ?? activePalette[0];
 
   function openNewPatternDialog() {
     setName("Mi patrón");
@@ -250,7 +254,9 @@ export default function Home() {
 
     const existingStitch =
       pattern.stitches.find(
-        (stitch) => stitch.x === x && stitch.y === y,
+        (stitch) =>
+          stitch.x === x &&
+          stitch.y === y,
       ) ?? null;
 
     if (selectedTool === "erase") {
@@ -265,7 +271,15 @@ export default function Home() {
         after: null,
       };
 
-      setPattern(updatePatternCell(pattern, x, y, null));
+      setPattern(
+        updatePatternCell(
+          pattern,
+          x,
+          y,
+          null,
+        ),
+      );
+
       addHistoryEntry(historyEntry);
 
       return;
@@ -293,7 +307,15 @@ export default function Home() {
       after: newStitch,
     };
 
-    setPattern(updatePatternCell(pattern, x, y, newStitch));
+    setPattern(
+      updatePatternCell(
+        pattern,
+        x,
+        y,
+        newStitch,
+      ),
+    );
+
     addHistoryEntry(historyEntry);
   }
 
@@ -302,7 +324,8 @@ export default function Home() {
       return;
     }
 
-    const entry = undoStack[undoStack.length - 1];
+    const entry =
+      undoStack[undoStack.length - 1];
 
     setPattern(
       updatePatternCell(
@@ -313,8 +336,13 @@ export default function Home() {
       ),
     );
 
-    setUndoStack((current) => current.slice(0, -1));
-    setRedoStack((current) => [...current, entry]);
+    setUndoStack(
+      (current) => current.slice(0, -1),
+    );
+
+    setRedoStack(
+      (current) => [...current, entry],
+    );
   }
 
   function handleRedo() {
@@ -322,7 +350,8 @@ export default function Home() {
       return;
     }
 
-    const entry = redoStack[redoStack.length - 1];
+    const entry =
+      redoStack[redoStack.length - 1];
 
     setPattern(
       updatePatternCell(
@@ -333,30 +362,45 @@ export default function Home() {
       ),
     );
 
-    setRedoStack((current) => current.slice(0, -1));
-    setUndoStack((current) => [...current, entry]);
+    setRedoStack(
+      (current) => current.slice(0, -1),
+    );
+
+    setUndoStack(
+      (current) => [...current, entry],
+    );
   }
 
-  function isValidHexColor(value: unknown): value is string {
+  function isValidHexColor(
+    value: unknown,
+  ): value is string {
     return (
       typeof value === "string" &&
       /^#[0-9A-Fa-f]{6}$/.test(value)
     );
   }
 
-  function isValidDate(value: unknown): value is string {
+  function isValidDate(
+    value: unknown,
+  ): value is string {
     return (
       typeof value === "string" &&
       !Number.isNaN(Date.parse(value))
     );
   }
 
-  function isValidPattern(value: unknown): value is Pattern {
-    if (typeof value !== "object" || value === null) {
+  function isValidPattern(
+    value: unknown,
+  ): value is Pattern {
+    if (
+      typeof value !== "object" ||
+      value === null
+    ) {
       return false;
     }
 
-    const candidate = value as Partial<Pattern>;
+    const candidate =
+      value as Partial<Pattern>;
 
     if (
       candidate.version !== "1.0" ||
@@ -389,7 +433,8 @@ export default function Home() {
       return false;
     }
 
-    const threadIds = new Set<string>();
+    const threadIds =
+      new Set<string>();
 
     for (const thread of candidate.palette) {
       if (
@@ -416,7 +461,8 @@ export default function Home() {
       return false;
     }
 
-    const occupiedCells = new Set<string>();
+    const occupiedCells =
+      new Set<string>();
 
     for (const stitch of candidate.stitches) {
       if (
@@ -435,9 +481,12 @@ export default function Home() {
         return false;
       }
 
-      const cellKey = `${stitch.x}:${stitch.y}`;
+      const cellKey =
+        `${stitch.x}:${stitch.y}`;
 
-      if (occupiedCells.has(cellKey)) {
+      if (
+        occupiedCells.has(cellKey)
+      ) {
         return false;
       }
 
@@ -447,8 +496,12 @@ export default function Home() {
     if (
       typeof candidate.metadata !== "object" ||
       candidate.metadata === null ||
-      !isValidDate(candidate.metadata.createdAt) ||
-      !isValidDate(candidate.metadata.updatedAt)
+      !isValidDate(
+        candidate.metadata.createdAt,
+      ) ||
+      !isValidDate(
+        candidate.metadata.updatedAt,
+      )
     ) {
       return false;
     }
@@ -456,7 +509,9 @@ export default function Home() {
     return true;
   }
 
-  function sanitizeFilename(value: string) {
+  function sanitizeFilename(
+    value: string,
+  ) {
     const sanitized = value
       .trim()
       .replace(/[<>:"/\\|?*]+/g, "-")
@@ -474,27 +529,43 @@ export default function Home() {
       ...pattern,
       metadata: {
         ...pattern.metadata,
-        updatedAt: new Date().toISOString(),
+        updatedAt:
+          new Date().toISOString(),
       },
     };
 
     setPattern(patternToSave);
 
-    const json = JSON.stringify(patternToSave, null, 2);
+    const json = JSON.stringify(
+      patternToSave,
+      null,
+      2,
+    );
 
-    const blob = new Blob([json], {
-      type: "application/json",
-    });
+    const blob = new Blob(
+      [json],
+      {
+        type: "application/json",
+      },
+    );
 
-    const url = URL.createObjectURL(blob);
+    const url =
+      URL.createObjectURL(blob);
 
-    const link = document.createElement("a");
+    const link =
+      document.createElement("a");
 
     link.href = url;
-    link.download = `${sanitizeFilename(patternToSave.name)}.stitch`;
+
+    link.download =
+      `${sanitizeFilename(
+        patternToSave.name,
+      )}.stitch`;
 
     document.body.appendChild(link);
+
     link.click();
+
     link.remove();
 
     URL.revokeObjectURL(url);
@@ -505,17 +576,22 @@ export default function Home() {
   }
 
   async function handleOpenPattern(
-    event: React.ChangeEvent<HTMLInputElement>,
+    event:
+      React.ChangeEvent<HTMLInputElement>,
   ) {
-    const file = event.target.files?.[0];
+    const file =
+      event.target.files?.[0];
 
     if (!file) {
       return;
     }
 
     try {
-      const text = await file.text();
-      const data: unknown = JSON.parse(text);
+      const text =
+        await file.text();
+
+      const data: unknown =
+        JSON.parse(text);
 
       if (!isValidPattern(data)) {
         alert(
@@ -523,18 +599,23 @@ export default function Home() {
         );
 
         event.target.value = "";
+
         return;
       }
 
       setPattern(data);
 
       setSelectedColorId(
-        data.palette[0]?.id ?? internalPalette[0].id,
+        data.palette[0]?.id ??
+          internalPalette[0].id,
       );
 
       setSelectedTool("stitch");
+
       setZoom(1);
+
       setUndoStack([]);
+
       setRedoStack([]);
     } catch {
       alert(
@@ -545,19 +626,74 @@ export default function Home() {
     event.target.value = "";
   }
 
+  function exportPatternAsPng() {
+    if (!pattern) {
+      return;
+    }
+
+    const canvas =
+      canvasRef.current;
+
+    if (!canvas) {
+      return;
+    }
+
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          alert(
+            "No se ha podido generar la imagen PNG.",
+          );
+
+          return;
+        }
+
+        const url =
+          URL.createObjectURL(blob);
+
+        const link =
+          document.createElement("a");
+
+        link.href = url;
+
+        link.download =
+          `${sanitizeFilename(
+            pattern.name,
+          )}.png`;
+
+        document.body.appendChild(link);
+
+        link.click();
+
+        link.remove();
+
+        URL.revokeObjectURL(url);
+      },
+      "image/png",
+    );
+  }
+
   function changeZoom(amount: number) {
     if (!pattern) {
       return;
     }
 
-    setZoom((currentZoom) => {
-      const newZoom = currentZoom + amount;
+    setZoom(
+      (currentZoom) => {
+        const newZoom =
+          currentZoom + amount;
 
-      return Math.min(
-        MAX_ZOOM,
-        Math.max(MIN_ZOOM, Math.round(newZoom * 100) / 100),
-      );
-    });
+        return Math.min(
+          MAX_ZOOM,
+          Math.max(
+            MIN_ZOOM,
+            Math.round(
+              newZoom * 100,
+            ) / 100,
+          ),
+        );
+      },
+    );
   }
 
   function resetZoom() {
@@ -568,7 +704,10 @@ export default function Home() {
     setZoom(1);
   }
 
-  function handleWheel(event: React.WheelEvent<HTMLElement>) {
+  function handleWheel(
+    event:
+      React.WheelEvent<HTMLElement>,
+  ) {
     if (!pattern) {
       return;
     }
@@ -582,12 +721,18 @@ export default function Home() {
     }
   }
 
-  function handlePanStart(event: React.MouseEvent<HTMLElement>) {
-    if (selectedTool !== "pan") {
+  function handlePanStart(
+    event:
+      React.MouseEvent<HTMLElement>,
+  ) {
+    if (
+      selectedTool !== "pan"
+    ) {
       return;
     }
 
-    const workspace = workspaceRef.current;
+    const workspace =
+      workspaceRef.current;
 
     if (!workspace) {
       return;
@@ -598,30 +743,46 @@ export default function Home() {
     panStartRef.current = {
       x: event.clientX,
       y: event.clientY,
-      scrollLeft: workspace.scrollLeft,
-      scrollTop: workspace.scrollTop,
+      scrollLeft:
+        workspace.scrollLeft,
+      scrollTop:
+        workspace.scrollTop,
     };
   }
 
-  function handlePanMove(event: React.MouseEvent<HTMLElement>) {
-    if (!isPanning || selectedTool !== "pan") {
+  function handlePanMove(
+    event:
+      React.MouseEvent<HTMLElement>,
+  ) {
+    if (
+      !isPanning ||
+      selectedTool !== "pan"
+    ) {
       return;
     }
 
-    const workspace = workspaceRef.current;
+    const workspace =
+      workspaceRef.current;
 
     if (!workspace) {
       return;
     }
 
-    const deltaX = event.clientX - panStartRef.current.x;
-    const deltaY = event.clientY - panStartRef.current.y;
+    const deltaX =
+      event.clientX -
+      panStartRef.current.x;
+
+    const deltaY =
+      event.clientY -
+      panStartRef.current.y;
 
     workspace.scrollLeft =
-      panStartRef.current.scrollLeft - deltaX;
+      panStartRef.current.scrollLeft -
+      deltaX;
 
     workspace.scrollTop =
-      panStartRef.current.scrollTop - deltaY;
+      panStartRef.current.scrollTop -
+      deltaY;
   }
 
   function handlePanEnd() {
@@ -629,100 +790,203 @@ export default function Home() {
   }
 
   useEffect(() => {
-    const canvas = canvasRef.current;
+    const canvas =
+      canvasRef.current;
 
-    if (!canvas || !pattern) {
+    if (
+      !canvas ||
+      !pattern
+    ) {
       return;
     }
 
-    const context = canvas.getContext("2d");
+    const context =
+      canvas.getContext("2d");
 
     if (!context) {
       return;
     }
 
-    const canvasWidth = pattern.width * CELL_SIZE;
-    const canvasHeight = pattern.height * CELL_SIZE;
+    const canvasWidth =
+      pattern.width * CELL_SIZE;
 
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
+    const canvasHeight =
+      pattern.height * CELL_SIZE;
 
-    context.clearRect(0, 0, canvasWidth, canvasHeight);
+    canvas.width =
+      canvasWidth;
 
-    context.fillStyle = pattern.fabric.color;
-    context.fillRect(0, 0, canvasWidth, canvasHeight);
+    canvas.height =
+      canvasHeight;
 
-    for (const stitch of pattern.stitches) {
-      const thread = pattern.palette.find(
-        (item) => item.id === stitch.colorId,
-      );
+    context.clearRect(
+      0,
+      0,
+      canvasWidth,
+      canvasHeight,
+    );
+
+    context.fillStyle =
+      pattern.fabric.color;
+
+    context.fillRect(
+      0,
+      0,
+      canvasWidth,
+      canvasHeight,
+    );
+
+    for (
+      const stitch
+      of pattern.stitches
+    ) {
+      const thread =
+        pattern.palette.find(
+          (item) =>
+            item.id ===
+            stitch.colorId,
+        );
 
       if (!thread) {
         continue;
       }
 
-      context.fillStyle = thread.rgb;
+      context.fillStyle =
+        thread.rgb;
 
       context.fillRect(
-        stitch.x * CELL_SIZE + 1,
-        stitch.y * CELL_SIZE + 1,
+        stitch.x *
+          CELL_SIZE +
+          1,
+        stitch.y *
+          CELL_SIZE +
+          1,
         CELL_SIZE - 1,
         CELL_SIZE - 1,
       );
     }
 
-    context.strokeStyle = "#cbd5e1";
+    context.strokeStyle =
+      "#cbd5e1";
+
     context.lineWidth = 1;
 
-    for (let x = 0; x <= pattern.width; x += 1) {
-      const pixelX = x * CELL_SIZE + 0.5;
+    for (
+      let x = 0;
+      x <= pattern.width;
+      x += 1
+    ) {
+      const pixelX =
+        x * CELL_SIZE + 0.5;
 
       context.beginPath();
-      context.moveTo(pixelX, 0);
-      context.lineTo(pixelX, canvasHeight);
+
+      context.moveTo(
+        pixelX,
+        0,
+      );
+
+      context.lineTo(
+        pixelX,
+        canvasHeight,
+      );
+
       context.stroke();
     }
 
-    for (let y = 0; y <= pattern.height; y += 1) {
-      const pixelY = y * CELL_SIZE + 0.5;
+    for (
+      let y = 0;
+      y <= pattern.height;
+      y += 1
+    ) {
+      const pixelY =
+        y * CELL_SIZE + 0.5;
 
       context.beginPath();
-      context.moveTo(0, pixelY);
-      context.lineTo(canvasWidth, pixelY);
+
+      context.moveTo(
+        0,
+        pixelY,
+      );
+
+      context.lineTo(
+        canvasWidth,
+        pixelY,
+      );
+
       context.stroke();
     }
 
-    context.strokeStyle = "#94a3b8";
+    context.strokeStyle =
+      "#94a3b8";
+
     context.lineWidth = 1.5;
 
-    for (let x = 0; x <= pattern.width; x += 10) {
-      const pixelX = x * CELL_SIZE + 0.5;
+    for (
+      let x = 0;
+      x <= pattern.width;
+      x += 10
+    ) {
+      const pixelX =
+        x * CELL_SIZE + 0.5;
 
       context.beginPath();
-      context.moveTo(pixelX, 0);
-      context.lineTo(pixelX, canvasHeight);
+
+      context.moveTo(
+        pixelX,
+        0,
+      );
+
+      context.lineTo(
+        pixelX,
+        canvasHeight,
+      );
+
       context.stroke();
     }
 
-    for (let y = 0; y <= pattern.height; y += 10) {
-      const pixelY = y * CELL_SIZE + 0.5;
+    for (
+      let y = 0;
+      y <= pattern.height;
+      y += 10
+    ) {
+      const pixelY =
+        y * CELL_SIZE + 0.5;
 
       context.beginPath();
-      context.moveTo(0, pixelY);
-      context.lineTo(canvasWidth, pixelY);
+
+      context.moveTo(
+        0,
+        pixelY,
+      );
+
+      context.lineTo(
+        canvasWidth,
+        pixelY,
+      );
+
       context.stroke();
     }
   }, [pattern]);
 
-  const displayedWidth = pattern?.width ?? 100;
-  const displayedHeight = pattern?.height ?? 80;
-  const displayedStitches = pattern?.stitches.length ?? 0;
+  const displayedWidth =
+    pattern?.width ?? 100;
 
-  const displayedColors = pattern
-    ? new Set(
-        pattern.stitches.map((stitch) => stitch.colorId),
-      ).size
-    : 0;
+  const displayedHeight =
+    pattern?.height ?? 80;
+
+  const displayedStitches =
+    pattern?.stitches.length ?? 0;
+
+  const displayedColors =
+    pattern
+      ? new Set(
+          pattern.stitches.map(
+            (stitch) =>
+              stitch.colorId,
+          ),
+        ).size
+      : 0;
 
   return (
     <main className="min-h-screen bg-slate-100 text-slate-900">
@@ -743,21 +1007,27 @@ export default function Home() {
 
             <nav className="flex items-center gap-2">
               <button
-                onClick={openNewPatternDialog}
+                onClick={
+                  openNewPatternDialog
+                }
                 className="rounded-md px-3 py-2 text-sm hover:bg-slate-100"
               >
                 Nuevo
               </button>
 
               <button
-                onClick={openPatternFileSelector}
+                onClick={
+                  openPatternFileSelector
+                }
                 className="rounded-md px-3 py-2 text-sm hover:bg-slate-100"
               >
                 Abrir
               </button>
 
               <button
-                onClick={savePattern}
+                onClick={
+                  savePattern
+                }
                 disabled={!pattern}
                 className="rounded-md px-3 py-2 text-sm hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
               >
@@ -768,7 +1038,9 @@ export default function Home() {
                 ref={fileInputRef}
                 type="file"
                 accept=".stitch,application/json"
-                onChange={handleOpenPattern}
+                onChange={
+                  handleOpenPattern
+                }
                 className="hidden"
               />
             </nav>
@@ -776,22 +1048,38 @@ export default function Home() {
 
           <div className="flex items-center gap-2">
             <button
-              onClick={handleUndo}
-              disabled={!pattern || undoStack.length === 0}
+              onClick={
+                handleUndo
+              }
+              disabled={
+                !pattern ||
+                undoStack.length === 0
+              }
               className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Undo
             </button>
 
             <button
-              onClick={handleRedo}
-              disabled={!pattern || redoStack.length === 0}
+              onClick={
+                handleRedo
+              }
+              disabled={
+                !pattern ||
+                redoStack.length === 0
+              }
               className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Redo
             </button>
 
-            <button className="rounded-md bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-700">
+            <button
+              onClick={
+                exportPatternAsPng
+              }
+              disabled={!pattern}
+              className="rounded-md bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+            >
               Exportar PNG
             </button>
           </div>
@@ -805,9 +1093,14 @@ export default function Home() {
 
             <div className="space-y-2">
               <button
-                onClick={() => setSelectedTool("stitch")}
+                onClick={() =>
+                  setSelectedTool(
+                    "stitch",
+                  )
+                }
                 className={`w-full rounded-lg px-3 py-3 text-left text-sm ${
-                  selectedTool === "stitch"
+                  selectedTool ===
+                  "stitch"
                     ? "bg-slate-900 text-white"
                     : "border border-slate-300 hover:bg-slate-50"
                 }`}
@@ -816,9 +1109,14 @@ export default function Home() {
               </button>
 
               <button
-                onClick={() => setSelectedTool("erase")}
+                onClick={() =>
+                  setSelectedTool(
+                    "erase",
+                  )
+                }
                 className={`w-full rounded-lg px-3 py-3 text-left text-sm ${
-                  selectedTool === "erase"
+                  selectedTool ===
+                  "erase"
                     ? "bg-slate-900 text-white"
                     : "border border-slate-300 hover:bg-slate-50"
                 }`}
@@ -827,9 +1125,14 @@ export default function Home() {
               </button>
 
               <button
-                onClick={() => setSelectedTool("pan")}
+                onClick={() =>
+                  setSelectedTool(
+                    "pan",
+                  )
+                }
                 className={`w-full rounded-lg px-3 py-3 text-left text-sm ${
-                  selectedTool === "pan"
+                  selectedTool ===
+                  "pan"
                     ? "bg-slate-900 text-white"
                     : "border border-slate-300 hover:bg-slate-50"
                 }`}
@@ -844,20 +1147,38 @@ export default function Home() {
               </div>
 
               <div className="mt-1 text-sm font-medium">
-                {selectedTool === "stitch" && "Puntada"}
-                {selectedTool === "erase" && "Borrar"}
-                {selectedTool === "pan" && "Mover"}
+                {selectedTool ===
+                  "stitch" &&
+                  "Puntada"}
+
+                {selectedTool ===
+                  "erase" &&
+                  "Borrar"}
+
+                {selectedTool ===
+                  "pan" &&
+                  "Mover"}
               </div>
             </div>
           </aside>
 
           <section
             ref={workspaceRef}
-            onWheel={handleWheel}
-            onMouseDown={handlePanStart}
-            onMouseMove={handlePanMove}
-            onMouseUp={handlePanEnd}
-            onMouseLeave={handlePanEnd}
+            onWheel={
+              handleWheel
+            }
+            onMouseDown={
+              handlePanStart
+            }
+            onMouseMove={
+              handlePanMove
+            }
+            onMouseUp={
+              handlePanEnd
+            }
+            onMouseLeave={
+              handlePanEnd
+            }
             className={`overflow-auto bg-slate-200 p-6 select-none ${
               selectedTool === "pan"
                 ? isPanning
@@ -877,15 +1198,27 @@ export default function Home() {
                 <div className="inline-block overflow-hidden rounded-lg border border-slate-400 bg-white shadow-sm">
                   <canvas
                     ref={canvasRef}
-                    onClick={handleCanvasClick}
+                    onClick={
+                      handleCanvasClick
+                    }
                     style={{
-                      width: `${pattern.width * CELL_SIZE * zoom}px`,
-                      height: `${pattern.height * CELL_SIZE * zoom}px`,
+                      width: `${
+                        pattern.width *
+                        CELL_SIZE *
+                        zoom
+                      }px`,
+                      height: `${
+                        pattern.height *
+                        CELL_SIZE *
+                        zoom
+                      }px`,
                     }}
                     className={`block ${
-                      selectedTool === "stitch"
+                      selectedTool ===
+                      "stitch"
                         ? "cursor-crosshair"
-                        : selectedTool === "erase"
+                        : selectedTool ===
+                            "erase"
                           ? "cursor-pointer"
                           : ""
                     }`}
@@ -910,51 +1243,69 @@ export default function Home() {
                 <div
                   className="h-8 w-8 rounded-md border border-slate-300"
                   style={{
-                    backgroundColor: selectedThread.rgb,
+                    backgroundColor:
+                      selectedThread.rgb,
                   }}
                 />
 
                 <div>
                   <div className="text-sm font-medium">
-                    {selectedThread.name}
+                    {
+                      selectedThread.name
+                    }
                   </div>
 
                   <div className="text-xs text-slate-500">
-                    Símbolo: {selectedThread.symbol}
+                    Símbolo:{" "}
+                    {
+                      selectedThread.symbol
+                    }
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="space-y-2">
-              {activePalette.map((thread) => (
-                <button
-                  key={thread.id}
-                  onClick={() =>
-                    setSelectedColorId(thread.id)
-                  }
-                  className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left ${
-                    selectedColorId === thread.id
-                      ? "border-slate-900 bg-slate-100"
-                      : "border-slate-200 hover:bg-slate-50"
-                  }`}
-                >
-                  <span
-                    className="h-6 w-6 rounded border border-slate-300"
-                    style={{
-                      backgroundColor: thread.rgb,
-                    }}
-                  />
+              {activePalette.map(
+                (thread) => (
+                  <button
+                    key={
+                      thread.id
+                    }
+                    onClick={() =>
+                      setSelectedColorId(
+                        thread.id,
+                      )
+                    }
+                    className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left ${
+                      selectedColorId ===
+                      thread.id
+                        ? "border-slate-900 bg-slate-100"
+                        : "border-slate-200 hover:bg-slate-50"
+                    }`}
+                  >
+                    <span
+                      className="h-6 w-6 rounded border border-slate-300"
+                      style={{
+                        backgroundColor:
+                          thread.rgb,
+                      }}
+                    />
 
-                  <span className="flex-1 text-sm">
-                    {thread.name}
-                  </span>
+                    <span className="flex-1 text-sm">
+                      {
+                        thread.name
+                      }
+                    </span>
 
-                  <span className="text-xs text-slate-500">
-                    {thread.symbol}
-                  </span>
-                </button>
-              ))}
+                    <span className="text-xs text-slate-500">
+                      {
+                        thread.symbol
+                      }
+                    </span>
+                  </button>
+                ),
+              )}
             </div>
           </aside>
         </section>
@@ -962,35 +1313,74 @@ export default function Home() {
         <footer className="flex h-10 items-center justify-between border-t border-slate-300 bg-white px-5 text-xs text-slate-600">
           <div className="flex items-center gap-6">
             <span>
-              {displayedWidth} × {displayedHeight} puntadas
+              {
+                displayedWidth
+              }{" "}
+              ×{" "}
+              {
+                displayedHeight
+              }{" "}
+              puntadas
             </span>
 
-            <span>{displayedStitches} puntadas</span>
+            <span>
+              {
+                displayedStitches
+              }{" "}
+              puntadas
+            </span>
 
-            <span>{displayedColors} colores</span>
+            <span>
+              {
+                displayedColors
+              }{" "}
+              colores
+            </span>
           </div>
 
           <div className="flex items-center gap-2">
             <button
-              onClick={() => changeZoom(-0.25)}
-              disabled={!pattern || zoom <= MIN_ZOOM}
+              onClick={() =>
+                changeZoom(
+                  -0.25,
+                )
+              }
+              disabled={
+                !pattern ||
+                zoom <= MIN_ZOOM
+              }
               className="flex h-7 w-7 items-center justify-center rounded border border-slate-300 bg-white text-sm disabled:cursor-not-allowed disabled:opacity-40"
             >
               −
             </button>
 
             <button
-              onClick={resetZoom}
+              onClick={
+                resetZoom
+              }
               disabled={!pattern}
               className="min-w-[90px] rounded px-2 py-1 hover:bg-slate-100 disabled:opacity-40"
               title="Volver a 100%"
             >
-              Zoom {Math.round(zoom * 100)}%
+              Zoom{" "}
+              {
+                Math.round(
+                  zoom * 100,
+                )
+              }
+              %
             </button>
 
             <button
-              onClick={() => changeZoom(0.25)}
-              disabled={!pattern || zoom >= MAX_ZOOM}
+              onClick={() =>
+                changeZoom(
+                  0.25,
+                )
+              }
+              disabled={
+                !pattern ||
+                zoom >= MAX_ZOOM
+              }
               className="flex h-7 w-7 items-center justify-center rounded border border-slate-300 bg-white text-sm disabled:cursor-not-allowed disabled:opacity-40"
             >
               +
@@ -1021,8 +1411,14 @@ export default function Home() {
                 <input
                   type="text"
                   value={name}
-                  onChange={(event) =>
-                    setName(event.target.value)
+                  onChange={(
+                    event,
+                  ) =>
+                    setName(
+                      event
+                        .target
+                        .value,
+                    )
                   }
                   className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
                 />
@@ -1038,9 +1434,19 @@ export default function Home() {
                     <input
                       type="number"
                       min="1"
-                      value={width}
-                      onChange={(event) =>
-                        setWidth(Number(event.target.value))
+                      value={
+                        width
+                      }
+                      onChange={(
+                        event,
+                      ) =>
+                        setWidth(
+                          Number(
+                            event
+                              .target
+                              .value,
+                          ),
+                        )
                       }
                       className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
                     />
@@ -1060,9 +1466,19 @@ export default function Home() {
                     <input
                       type="number"
                       min="1"
-                      value={height}
-                      onChange={(event) =>
-                        setHeight(Number(event.target.value))
+                      value={
+                        height
+                      }
+                      onChange={(
+                        event,
+                      ) =>
+                        setHeight(
+                          Number(
+                            event
+                              .target
+                              .value,
+                          ),
+                        )
                       }
                       className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
                     />
@@ -1086,17 +1502,31 @@ export default function Home() {
                     </label>
 
                     <select
-                      value={fabricType}
-                      onChange={(event) =>
-                        setFabricType(event.target.value)
+                      value={
+                        fabricType
+                      }
+                      onChange={(
+                        event,
+                      ) =>
+                        setFabricType(
+                          event
+                            .target
+                            .value,
+                        )
                       }
                       className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
                     >
-                      <option value="aida">Aida</option>
+                      <option value="aida">
+                        Aida
+                      </option>
+
                       <option value="evenweave">
                         Evenweave
                       </option>
-                      <option value="other">Otra</option>
+
+                      <option value="other">
+                        Otra
+                      </option>
                     </select>
                   </div>
 
@@ -1108,9 +1538,19 @@ export default function Home() {
                     <input
                       type="number"
                       min="1"
-                      value={fabricCount}
-                      onChange={(event) =>
-                        setFabricCount(Number(event.target.value))
+                      value={
+                        fabricCount
+                      }
+                      onChange={(
+                        event,
+                      ) =>
+                        setFabricCount(
+                          Number(
+                            event
+                              .target
+                              .value,
+                          ),
+                        )
                       }
                       className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
                     />
@@ -1123,9 +1563,17 @@ export default function Home() {
 
                     <input
                       type="color"
-                      value={fabricColor}
-                      onChange={(event) =>
-                        setFabricColor(event.target.value)
+                      value={
+                        fabricColor
+                      }
+                      onChange={(
+                        event,
+                      ) =>
+                        setFabricColor(
+                          event
+                            .target
+                            .value,
+                        )
                       }
                       className="h-10 w-full cursor-pointer rounded-md border border-slate-300 bg-white p-1"
                     />
@@ -1136,14 +1584,20 @@ export default function Home() {
 
             <div className="mt-6 flex justify-end gap-3">
               <button
-                onClick={() => setShowNewPattern(false)}
+                onClick={() =>
+                  setShowNewPattern(
+                    false,
+                  )
+                }
                 className="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50"
               >
                 Cancelar
               </button>
 
               <button
-                onClick={createPattern}
+                onClick={
+                  createPattern
+                }
                 className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-700"
               >
                 Crear patrón
