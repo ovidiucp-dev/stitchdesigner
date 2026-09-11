@@ -115,7 +115,7 @@ export default function Home() {
     );
 
   const [name, setName] =
-    useState("Mi patrÃ³n");
+    useState("Mi patrón")
 
   const [width, setWidth] =
     useState(100);
@@ -197,8 +197,7 @@ export default function Home() {
     activePalette[0];
 
   function openNewPatternDialog() {
-    setName("Mi patrÃ³n");
-    setWidth(100);
+    setName("Mi patrón"); setWidth(100);
     setHeight(80);
     setFabricType("aida");
     setFabricCount(14);
@@ -219,8 +218,7 @@ export default function Home() {
       fabricCount <= 0
     ) {
       alert(
-        "Revisa los datos del patrÃ³n. Ancho, alto y count deben ser vÃ¡lidos.",
-      );
+        "Revisa los datos del patrón. Ancho, alto y count deben ser válidos."     );
 
       return;
     }
@@ -665,7 +663,7 @@ export default function Home() {
         )
       ) {
         alert(
-          "El archivo no es un patrÃ³n StitchDesigner vÃ¡lido o utiliza una versiÃ³n no compatible.",
+          "El archivo no es un patrón StitchDesigner válido o utiliza una versión no compatible."
         );
 
         event.target.value =
@@ -692,7 +690,7 @@ export default function Home() {
       setRedoStack([]);
     } catch {
       alert(
-        "No se ha podido abrir el archivo. Comprueba que es un archivo .stitch vÃ¡lido.",
+        "No se ha podido abrir el archivo. Comprueba que es un archivo .stitch válido."
       );
     }
 
