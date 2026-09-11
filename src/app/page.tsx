@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 type StitchType = "full";
+type EditorTool = "stitch" | "erase";
 
 type Stitch = {
   x: number;
@@ -96,6 +97,9 @@ export default function Home() {
   const [selectedColorId, setSelectedColorId] =
     useState(internalPalette[0].id);
 
+  const [selectedTool, setSelectedTool] =
+    useState<EditorTool>("stitch");
+
   const selectedThread =
     internalPalette.find((thread) => thread.id === selectedColorId) ??
     internalPalette[0];
@@ -148,7 +152,83 @@ export default function Home() {
 
     setPattern(newPattern);
     setSelectedColorId(internalPalette[0].id);
+    setSelectedTool("stitch");
     setShowNewPattern(false);
+  }
+
+  function handleCanvasClick(
+    event: React.MouseEvent<HTMLCanvasElement>,
+  ) {
+    if (!pattern) {
+      return;
+    }
+
+    const canvas = canvasRef.current;
+
+    if (!canvas) {
+      return;
+    }
+
+    const rect = canvas.getBoundingClientRect();
+
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    const mouseX = (event.clientX - rect.left) * scaleX;
+    const mouseY = (event.clientY - rect.top) * scaleY;
+
+    const x = Math.floor(mouseX / CELL_SIZE);
+    const y = Math.floor(mouseY / CELL_SIZE);
+
+    if (
+      x < 0 ||
+      y < 0 ||
+      x >= pattern.width ||
+      y >= pattern.height
+    ) {
+      return;
+    }
+
+    if (selectedTool === "erase") {
+      const remainingStitches = pattern.stitches.filter(
+        (stitch) => !(stitch.x === x && stitch.y === y),
+      );
+
+      if (remainingStitches.length === pattern.stitches.length) {
+        return;
+      }
+
+      setPattern({
+        ...pattern,
+        stitches: remainingStitches,
+        metadata: {
+          ...pattern.metadata,
+          updatedAt: new Date().toISOString(),
+        },
+      });
+
+      return;
+    }
+
+    const newStitch: Stitch = {
+      x,
+      y,
+      colorId: selectedColorId,
+      type: "full",
+    };
+
+    const stitchesWithoutCurrentCell = pattern.stitches.filter(
+      (stitch) => !(stitch.x === x && stitch.y === y),
+    );
+
+    setPattern({
+      ...pattern,
+      stitches: [...stitchesWithoutCurrentCell, newStitch],
+      metadata: {
+        ...pattern.metadata,
+        updatedAt: new Date().toISOString(),
+      },
+    });
   }
 
   useEffect(() => {
@@ -174,6 +254,25 @@ export default function Home() {
 
     context.fillStyle = pattern.fabric.color;
     context.fillRect(0, 0, canvasWidth, canvasHeight);
+
+    for (const stitch of pattern.stitches) {
+      const thread = pattern.palette.find(
+        (item) => item.id === stitch.colorId,
+      );
+
+      if (!thread) {
+        continue;
+      }
+
+      context.fillStyle = thread.rgb;
+
+      context.fillRect(
+        stitch.x * CELL_SIZE + 1,
+        stitch.y * CELL_SIZE + 1,
+        CELL_SIZE - 1,
+        CELL_SIZE - 1,
+      );
+    }
 
     context.strokeStyle = "#cbd5e1";
     context.lineWidth = 1;
@@ -221,18 +320,23 @@ export default function Home() {
   const displayedWidth = pattern?.width ?? 100;
   const displayedHeight = pattern?.height ?? 80;
   const displayedStitches = pattern?.stitches.length ?? 0;
-  const displayedColors = pattern?.palette.length ?? internalPalette.length;
-
+  const displayedColors = pattern
+  ? new Set(pattern.stitches.map((stitch) => stitch.colorId)).size
+  : 0;
   return (
     <main className="min-h-screen bg-slate-100 text-slate-900">
       <div className="flex min-h-screen flex-col">
         <header className="flex h-16 items-center justify-between border-b border-slate-300 bg-white px-5">
           <div className="flex items-center gap-6">
             <div>
-              <div className="text-lg font-semibold">StitchDesigner</div>
+              <div className="text-lg font-semibold">
+                StitchDesigner
+              </div>
 
               {pattern && (
-                <div className="text-xs text-slate-500">{pattern.name}</div>
+                <div className="text-xs text-slate-500">
+                  {pattern.name}
+                </div>
               )}
             </div>
 
@@ -276,17 +380,47 @@ export default function Home() {
             </h2>
 
             <div className="space-y-2">
-              <button className="w-full rounded-lg bg-slate-900 px-3 py-3 text-left text-sm text-white">
+              <button
+                onClick={() => setSelectedTool("stitch")}
+                className={`w-full rounded-lg px-3 py-3 text-left text-sm ${
+                  selectedTool === "stitch"
+                    ? "bg-slate-900 text-white"
+                    : "border border-slate-300 hover:bg-slate-50"
+                }`}
+              >
                 Puntada
               </button>
 
-              <button className="w-full rounded-lg border border-slate-300 px-3 py-3 text-left text-sm hover:bg-slate-50">
+              <button
+                onClick={() => setSelectedTool("erase")}
+                className={`w-full rounded-lg px-3 py-3 text-left text-sm ${
+                  selectedTool === "erase"
+                    ? "bg-slate-900 text-white"
+                    : "border border-slate-300 hover:bg-slate-50"
+                }`}
+              >
                 Borrar
               </button>
 
-              <button className="w-full rounded-lg border border-slate-300 px-3 py-3 text-left text-sm hover:bg-slate-50">
+              <button
+                disabled
+                className="w-full cursor-not-allowed rounded-lg border border-slate-200 px-3 py-3 text-left text-sm text-slate-400"
+                title="Se implementará en el siguiente bloque"
+              >
                 Mover
               </button>
+            </div>
+
+            <div className="mt-6 border-t border-slate-200 pt-4">
+              <div className="text-xs text-slate-500">
+                Herramienta activa
+              </div>
+
+              <div className="mt-1 text-sm font-medium">
+                {selectedTool === "stitch"
+                  ? "Puntada"
+                  : "Borrar"}
+              </div>
             </div>
           </aside>
 
@@ -302,7 +436,12 @@ export default function Home() {
                 <div className="inline-block overflow-hidden rounded-lg border border-slate-400 bg-white shadow-sm">
                   <canvas
                     ref={canvasRef}
-                    className="block"
+                    onClick={handleCanvasClick}
+                    className={`block ${
+                      selectedTool === "stitch"
+                        ? "cursor-crosshair"
+                        : "cursor-pointer"
+                    }`}
                     aria-label="Canvas del patrón"
                   />
                 </div>
@@ -323,11 +462,19 @@ export default function Home() {
               <div className="flex items-center gap-3">
                 <div
                   className="h-8 w-8 rounded-md border border-slate-300"
-                  style={{ backgroundColor: selectedThread.rgb }}
+                  style={{
+                    backgroundColor: selectedThread.rgb,
+                  }}
                 />
 
-                <div className="text-sm font-medium">
-                  {selectedThread.name}
+                <div>
+                  <div className="text-sm font-medium">
+                    {selectedThread.name}
+                  </div>
+
+                  <div className="text-xs text-slate-500">
+                    Símbolo: {selectedThread.symbol}
+                  </div>
                 </div>
               </div>
             </div>
@@ -348,7 +495,9 @@ export default function Home() {
                     style={{ backgroundColor: thread.rgb }}
                   />
 
-                  <span className="flex-1 text-sm">{thread.name}</span>
+                  <span className="flex-1 text-sm">
+                    {thread.name}
+                  </span>
 
                   <span className="text-xs text-slate-500">
                     {thread.symbol}
@@ -378,7 +527,9 @@ export default function Home() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
             <div className="mb-6">
-              <h2 className="text-xl font-semibold">Nuevo patrón</h2>
+              <h2 className="text-xl font-semibold">
+                Nuevo patrón
+              </h2>
 
               <p className="mt-1 text-sm text-slate-500">
                 Define las características básicas del patrón.
@@ -394,7 +545,9 @@ export default function Home() {
                 <input
                   type="text"
                   value={name}
-                  onChange={(event) => setName(event.target.value)}
+                  onChange={(event) =>
+                    setName(event.target.value)
+                  }
                   className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
                 />
               </div>
@@ -446,7 +599,9 @@ export default function Home() {
               </div>
 
               <div className="border-t border-slate-200 pt-4">
-                <div className="mb-3 text-sm font-semibold">Tela</div>
+                <div className="mb-3 text-sm font-semibold">
+                  Tela
+                </div>
 
                 <div className="space-y-4">
                   <div>
@@ -462,7 +617,9 @@ export default function Home() {
                       className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
                     >
                       <option value="aida">Aida</option>
-                      <option value="evenweave">Evenweave</option>
+                      <option value="evenweave">
+                        Evenweave
+                      </option>
                       <option value="other">Otra</option>
                     </select>
                   </div>
@@ -477,7 +634,9 @@ export default function Home() {
                       min="1"
                       value={fabricCount}
                       onChange={(event) =>
-                        setFabricCount(Number(event.target.value))
+                        setFabricCount(
+                          Number(event.target.value),
+                        )
                       }
                       className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
                     />
