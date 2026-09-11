@@ -1,4 +1,10 @@
+"use client";
+
+import { useState } from "react";
+
 export default function Home() {
+  const [showNewPattern, setShowNewPattern] = useState(false);
+
   const palette = [
     { name: "Black", color: "#111111" },
     { name: "Dark Red", color: "#A92332" },
@@ -15,12 +21,17 @@ export default function Home() {
             <div className="text-lg font-semibold">StitchDesigner</div>
 
             <nav className="flex items-center gap-2">
-              <button className="rounded-md px-3 py-2 text-sm hover:bg-slate-100">
+              <button
+                onClick={() => setShowNewPattern(true)}
+                className="rounded-md px-3 py-2 text-sm hover:bg-slate-100"
+              >
                 Nuevo
               </button>
+
               <button className="rounded-md px-3 py-2 text-sm hover:bg-slate-100">
                 Abrir
               </button>
+
               <button className="rounded-md px-3 py-2 text-sm hover:bg-slate-100">
                 Guardar
               </button>
@@ -31,9 +42,11 @@ export default function Home() {
             <button className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-100">
               Undo
             </button>
+
             <button className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-100">
               Redo
             </button>
+
             <button className="rounded-md bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-700">
               Exportar PNG
             </button>
@@ -127,6 +140,123 @@ export default function Home() {
           <div>Zoom 100%</div>
         </footer>
       </div>
+
+      {showNewPattern && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold">Nuevo patrón</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Define las características básicas del patrón.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1 block text-sm font-medium">
+                  Nombre
+                </label>
+                <input
+                  type="text"
+                  defaultValue="Mi patrón"
+                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-1 block text-sm font-medium">
+                    Ancho
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="1"
+                      defaultValue="100"
+                      className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                    />
+                    <span className="text-xs text-slate-500">puntadas</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium">
+                    Alto
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="1"
+                      defaultValue="80"
+                      className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                    />
+                    <span className="text-xs text-slate-500">puntadas</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-200 pt-4">
+                <div className="mb-3 text-sm font-semibold">Tela</div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">
+                      Tipo
+                    </label>
+                    <select
+                      defaultValue="aida"
+                      className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
+                    >
+                      <option value="aida">Aida</option>
+                      <option value="evenweave">Evenweave</option>
+                      <option value="other">Otra</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">
+                      Count
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      defaultValue="14"
+                      className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">
+                      Color
+                    </label>
+                    <input
+                      type="color"
+                      defaultValue="#ffffff"
+                      className="h-10 w-full cursor-pointer rounded-md border border-slate-300 bg-white p-1"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => setShowNewPattern(false)}
+                className="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50"
+              >
+                Cancelar
+              </button>
+
+              <button
+                onClick={() => setShowNewPattern(false)}
+                className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-700"
+              >
+                Crear patrón
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
