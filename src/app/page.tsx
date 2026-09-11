@@ -11,6 +11,10 @@ import {
 } from "@/components/editor/EditorHeader";
 
 import {
+  ImageToPatternDialog,
+} from "@/components/editor/ImageToPatternDialog";
+
+import {
   NewPatternDialog,
 } from "@/components/editor/NewPatternDialog";
 
@@ -97,6 +101,12 @@ export default function Home() {
     useState(false);
 
   const [
+    showImageToPattern,
+    setShowImageToPattern,
+  ] =
+    useState(false);
+
+  const [
     pattern,
     setPattern,
   ] =
@@ -105,7 +115,7 @@ export default function Home() {
     );
 
   const [name, setName] =
-    useState("Mi patrón");
+    useState("Mi patrÃ³n");
 
   const [width, setWidth] =
     useState(100);
@@ -187,7 +197,7 @@ export default function Home() {
     activePalette[0];
 
   function openNewPatternDialog() {
-    setName("Mi patrón");
+    setName("Mi patrÃ³n");
     setWidth(100);
     setHeight(80);
     setFabricType("aida");
@@ -209,7 +219,7 @@ export default function Home() {
       fabricCount <= 0
     ) {
       alert(
-        "Revisa los datos del patrón. Ancho, alto y count deben ser válidos.",
+        "Revisa los datos del patrÃ³n. Ancho, alto y count deben ser vÃ¡lidos.",
       );
 
       return;
@@ -271,6 +281,40 @@ export default function Home() {
     setRedoStack([]);
 
     setShowNewPattern(
+      false,
+    );
+  }
+
+  function handleCreatePatternFromImage(
+    newPattern: Pattern,
+  ) {
+    if (
+      pattern &&
+      !window.confirm(
+        "El patrón actual será sustituido por el patrón generado desde la imagen. ¿Quieres continuar?",
+      )
+    ) {
+      return;
+    }
+
+    setPattern(
+      newPattern,
+    );
+
+    setSelectedColorId(
+      newPattern.palette[0]?.id ??
+        internalPalette[0].id,
+    );
+
+    setSelectedTool(
+      "stitch",
+    );
+
+    setZoom(1);
+    setUndoStack([]);
+    setRedoStack([]);
+
+    setShowImageToPattern(
       false,
     );
   }
@@ -621,7 +665,7 @@ export default function Home() {
         )
       ) {
         alert(
-          "El archivo no es un patrón StitchDesigner válido o utiliza una versión no compatible.",
+          "El archivo no es un patrÃ³n StitchDesigner vÃ¡lido o utiliza una versiÃ³n no compatible.",
         );
 
         event.target.value =
@@ -648,7 +692,7 @@ export default function Home() {
       setRedoStack([]);
     } catch {
       alert(
-        "No se ha podido abrir el archivo. Comprueba que es un archivo .stitch válido.",
+        "No se ha podido abrir el archivo. Comprueba que es un archivo .stitch vÃ¡lido.",
       );
     }
 
@@ -923,6 +967,11 @@ export default function Home() {
             onOpen={
               openPatternFileSelector
             }
+            onImageToPattern={() =>
+              setShowImageToPattern(
+                true,
+              )
+            }
             onSave={
               savePattern
             }
@@ -1045,6 +1094,20 @@ export default function Home() {
           />
         </div>
       </div>
+
+      <ImageToPatternDialog
+        open={
+          showImageToPattern
+        }
+        onCancel={() =>
+          setShowImageToPattern(
+            false,
+          )
+        }
+        onCreate={
+          handleCreatePatternFromImage
+        }
+      />
 
       <NewPatternDialog
         open={

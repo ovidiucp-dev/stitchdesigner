@@ -13,6 +13,7 @@ type EditorHeaderProps = {
   fileInputRef: RefObject<HTMLInputElement | null>;
   onNew: () => void;
   onOpen: () => void;
+  onImageToPattern: () => void;
   onSave: () => void;
   onUndo: () => void;
   onRedo: () => void;
@@ -30,6 +31,7 @@ export function EditorHeader({
   fileInputRef,
   onNew,
   onOpen,
+  onImageToPattern,
   onSave,
   onUndo,
   onRedo,
@@ -64,6 +66,13 @@ export function EditorHeader({
             className="rounded-md px-3 py-2 text-sm hover:bg-slate-100"
           >
             Abrir
+          </button>
+
+          <button
+            onClick={onImageToPattern}
+            className="rounded-md px-3 py-2 text-sm hover:bg-slate-100"
+          >
+            Imagen → Patrón
           </button>
 
           <button
