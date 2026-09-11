@@ -895,51 +895,53 @@ export default function Home() {
       : 0;
 
   return (
-    <main className="min-h-screen bg-slate-100 text-slate-900">
-      <div className="flex min-h-screen flex-col">
-        <EditorHeader
-          patternName={
-            pattern?.name ??
-            null
-          }
-          hasPattern={
-            Boolean(pattern)
-          }
-          canUndo={
-            Boolean(pattern) &&
-            undoStack.length > 0
-          }
-          canRedo={
-            Boolean(pattern) &&
-            redoStack.length > 0
-          }
-          fileInputRef={
-            fileInputRef
-          }
-          onNew={
-            openNewPatternDialog
-          }
-          onOpen={
-            openPatternFileSelector
-          }
-          onSave={
-            savePattern
-          }
-          onUndo={
-            handleUndo
-          }
-          onRedo={
-            handleRedo
-          }
-          onExportPng={
-            exportPatternAsPng
-          }
-          onOpenFile={
-            handleOpenPattern
-          }
-        />
+    <main className="h-screen overflow-hidden bg-slate-100 text-slate-900">
+      <div className="flex h-full min-h-0 flex-col">
+        <div className="shrink-0">
+          <EditorHeader
+            patternName={
+              pattern?.name ??
+              null
+            }
+            hasPattern={
+              Boolean(pattern)
+            }
+            canUndo={
+              Boolean(pattern) &&
+              undoStack.length > 0
+            }
+            canRedo={
+              Boolean(pattern) &&
+              redoStack.length > 0
+            }
+            fileInputRef={
+              fileInputRef
+            }
+            onNew={
+              openNewPatternDialog
+            }
+            onOpen={
+              openPatternFileSelector
+            }
+            onSave={
+              savePattern
+            }
+            onUndo={
+              handleUndo
+            }
+            onRedo={
+              handleRedo
+            }
+            onExportPng={
+              exportPatternAsPng
+            }
+            onOpenFile={
+              handleOpenPattern
+            }
+          />
+        </div>
 
-        <section className="grid flex-1 grid-cols-[180px_1fr_240px] overflow-hidden">
+        <section className="grid min-h-0 flex-1 grid-cols-[180px_minmax(0,1fr)_240px] overflow-hidden">
           <ToolsPanel
             selectedTool={
               selectedTool
@@ -1001,45 +1003,47 @@ export default function Home() {
           />
         </section>
 
-        <StatusBar
-          width={
-            displayedWidth
-          }
-          height={
-            displayedHeight
-          }
-          stitches={
-            displayedStitches
-          }
-          colors={
-            displayedColors
-          }
-          zoom={
-            zoom
-          }
-          hasPattern={
-            Boolean(pattern)
-          }
-          minZoom={
-            MIN_ZOOM
-          }
-          maxZoom={
-            MAX_ZOOM
-          }
-          onZoomOut={() =>
-            changeZoom(
-              -0.25,
-            )
-          }
-          onZoomIn={() =>
-            changeZoom(
-              0.25,
-            )
-          }
-          onResetZoom={
-            resetZoom
-          }
-        />
+        <div className="shrink-0">
+          <StatusBar
+            width={
+              displayedWidth
+            }
+            height={
+              displayedHeight
+            }
+            stitches={
+              displayedStitches
+            }
+            colors={
+              displayedColors
+            }
+            zoom={
+              zoom
+            }
+            hasPattern={
+              Boolean(pattern)
+            }
+            minZoom={
+              MIN_ZOOM
+            }
+            maxZoom={
+              MAX_ZOOM
+            }
+            onZoomOut={() =>
+              changeZoom(
+                -0.25,
+              )
+            }
+            onZoomIn={() =>
+              changeZoom(
+                0.25,
+              )
+            }
+            onResetZoom={
+              resetZoom
+            }
+          />
+        </div>
       </div>
 
       <NewPatternDialog
