@@ -7,6 +7,38 @@ import {
 } from "react";
 
 import {
+  EditorHeader,
+} from "@/components/editor/EditorHeader";
+
+import {
+  NewPatternDialog,
+} from "@/components/editor/NewPatternDialog";
+
+import {
+  PalettePanel,
+} from "@/components/editor/PalettePanel";
+
+import {
+  PatternCanvas,
+} from "@/components/editor/PatternCanvas";
+
+import {
+  StatusBar,
+} from "@/components/editor/StatusBar";
+
+import {
+  ToolsPanel,
+} from "@/components/editor/ToolsPanel";
+
+import type {
+  EditorTool,
+} from "@/components/editor/ToolsPanel";
+
+import {
+  internalPalette,
+} from "@/data/internalPalette";
+
+import {
   CELL_SIZE,
   renderPatternToCanvas,
 } from "@/lib/canvasRenderer";
@@ -23,10 +55,6 @@ import {
 } from "@/lib/patternOperations";
 
 import {
-  internalPalette,
-} from "@/data/internalPalette";
-
-import {
   isValidPattern,
 } from "@/lib/patternValidation";
 
@@ -35,11 +63,6 @@ import type {
   Stitch,
   StitchHistoryEntry,
 } from "@/types/pattern";
-
-type EditorTool =
-  | "stitch"
-  | "erase"
-  | "pan";
 
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 4;
@@ -70,7 +93,8 @@ export default function Home() {
   const [
     showNewPattern,
     setShowNewPattern,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   const [
     pattern,
@@ -80,22 +104,13 @@ export default function Home() {
       null,
     );
 
-  const [
-    name,
-    setName,
-  ] =
+  const [name, setName] =
     useState("Mi patrón");
 
-  const [
-    width,
-    setWidth,
-  ] =
+  const [width, setWidth] =
     useState(100);
 
-  const [
-    height,
-    setHeight,
-  ] =
+  const [height, setHeight] =
     useState(80);
 
   const [
@@ -119,9 +134,10 @@ export default function Home() {
   const [
     selectedColorId,
     setSelectedColorId,
-  ] = useState(
-    internalPalette[0].id,
-  );
+  ] =
+    useState(
+      internalPalette[0].id,
+    );
 
   const [
     selectedTool,
@@ -131,10 +147,7 @@ export default function Home() {
       "stitch",
     );
 
-  const [
-    zoom,
-    setZoom,
-  ] =
+  const [zoom, setZoom] =
     useState(1);
 
   const [
@@ -174,22 +187,12 @@ export default function Home() {
     activePalette[0];
 
   function openNewPatternDialog() {
-    setName(
-      "Mi patrón",
-    );
-
+    setName("Mi patrón");
     setWidth(100);
     setHeight(80);
-
-    setFabricType(
-      "aida",
-    );
-
+    setFabricType("aida");
     setFabricCount(14);
-
-    setFabricColor(
-      "#ffffff",
-    );
+    setFabricColor("#ffffff");
 
     setShowNewPattern(
       true,
@@ -265,7 +268,6 @@ export default function Home() {
     setZoom(1);
 
     setUndoStack([]);
-
     setRedoStack([]);
 
     setShowNewPattern(
@@ -583,7 +585,6 @@ export default function Home() {
     );
 
     link.click();
-
     link.remove();
 
     URL.revokeObjectURL(
@@ -644,7 +645,6 @@ export default function Home() {
       setZoom(1);
 
       setUndoStack([]);
-
       setRedoStack([]);
     } catch {
       alert(
@@ -695,13 +695,11 @@ export default function Home() {
             pattern.name,
           )}.png`;
 
-        document.body
-          .appendChild(
-            link,
-          );
+        document.body.appendChild(
+          link,
+        );
 
         link.click();
-
         link.remove();
 
         URL.revokeObjectURL(
@@ -899,649 +897,200 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-slate-100 text-slate-900">
       <div className="flex min-h-screen flex-col">
-        <header className="flex h-16 items-center justify-between border-b border-slate-300 bg-white px-5">
-          <div className="flex items-center gap-6">
-            <div>
-              <div className="text-lg font-semibold">
-                StitchDesigner
-              </div>
-
-              {pattern && (
-                <div className="text-xs text-slate-500">
-                  {
-                    pattern.name
-                  }
-                </div>
-              )}
-            </div>
-
-            <nav className="flex items-center gap-2">
-              <button
-                onClick={
-                  openNewPatternDialog
-                }
-                className="rounded-md px-3 py-2 text-sm hover:bg-slate-100"
-              >
-                Nuevo
-              </button>
-
-              <button
-                onClick={
-                  openPatternFileSelector
-                }
-                className="rounded-md px-3 py-2 text-sm hover:bg-slate-100"
-              >
-                Abrir
-              </button>
-
-              <button
-                onClick={
-                  savePattern
-                }
-                disabled={
-                  !pattern
-                }
-                className="rounded-md px-3 py-2 text-sm hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Guardar
-              </button>
-
-              <input
-                ref={
-                  fileInputRef
-                }
-                type="file"
-                accept=".stitch,application/json"
-                onChange={
-                  handleOpenPattern
-                }
-                className="hidden"
-              />
-            </nav>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={
-                handleUndo
-              }
-              disabled={
-                !pattern ||
-                undoStack.length ===
-                  0
-              }
-              className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Undo
-            </button>
-
-            <button
-              onClick={
-                handleRedo
-              }
-              disabled={
-                !pattern ||
-                redoStack.length ===
-                  0
-              }
-              className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Redo
-            </button>
-
-            <button
-              onClick={
-                exportPatternAsPng
-              }
-              disabled={
-                !pattern
-              }
-              className="rounded-md bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Exportar PNG
-            </button>
-          </div>
-        </header>
+        <EditorHeader
+          patternName={
+            pattern?.name ??
+            null
+          }
+          hasPattern={
+            Boolean(pattern)
+          }
+          canUndo={
+            Boolean(pattern) &&
+            undoStack.length > 0
+          }
+          canRedo={
+            Boolean(pattern) &&
+            redoStack.length > 0
+          }
+          fileInputRef={
+            fileInputRef
+          }
+          onNew={
+            openNewPatternDialog
+          }
+          onOpen={
+            openPatternFileSelector
+          }
+          onSave={
+            savePattern
+          }
+          onUndo={
+            handleUndo
+          }
+          onRedo={
+            handleRedo
+          }
+          onExportPng={
+            exportPatternAsPng
+          }
+          onOpenFile={
+            handleOpenPattern
+          }
+        />
 
         <section className="grid flex-1 grid-cols-[180px_1fr_240px] overflow-hidden">
-          <aside className="border-r border-slate-300 bg-white p-4">
-            <h2 className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Herramientas
-            </h2>
+          <ToolsPanel
+            selectedTool={
+              selectedTool
+            }
+            onSelectTool={
+              setSelectedTool
+            }
+          />
 
-            <div className="space-y-2">
-              <button
-                onClick={() =>
-                  setSelectedTool(
-                    "stitch",
-                  )
-                }
-                className={`w-full rounded-lg px-3 py-3 text-left text-sm ${
-                  selectedTool ===
-                  "stitch"
-                    ? "bg-slate-900 text-white"
-                    : "border border-slate-300 hover:bg-slate-50"
-                }`}
-              >
-                Puntada
-              </button>
-
-              <button
-                onClick={() =>
-                  setSelectedTool(
-                    "erase",
-                  )
-                }
-                className={`w-full rounded-lg px-3 py-3 text-left text-sm ${
-                  selectedTool ===
-                  "erase"
-                    ? "bg-slate-900 text-white"
-                    : "border border-slate-300 hover:bg-slate-50"
-                }`}
-              >
-                Borrar
-              </button>
-
-              <button
-                onClick={() =>
-                  setSelectedTool(
-                    "pan",
-                  )
-                }
-                className={`w-full rounded-lg px-3 py-3 text-left text-sm ${
-                  selectedTool ===
-                  "pan"
-                    ? "bg-slate-900 text-white"
-                    : "border border-slate-300 hover:bg-slate-50"
-                }`}
-              >
-                Mover
-              </button>
-            </div>
-
-            <div className="mt-6 border-t border-slate-200 pt-4">
-              <div className="text-xs text-slate-500">
-                Herramienta activa
-              </div>
-
-              <div className="mt-1 text-sm font-medium">
-                {selectedTool ===
-                  "stitch" &&
-                  "Puntada"}
-
-                {selectedTool ===
-                  "erase" &&
-                  "Borrar"}
-
-                {selectedTool ===
-                  "pan" &&
-                  "Mover"}
-              </div>
-            </div>
-          </aside>
-
-          <section
-            ref={
+          <PatternCanvas
+            pattern={
+              pattern
+            }
+            zoom={
+              zoom
+            }
+            selectedTool={
+              selectedTool
+            }
+            isPanning={
+              isPanning
+            }
+            canvasRef={
+              canvasRef
+            }
+            workspaceRef={
               workspaceRef
+            }
+            onCanvasClick={
+              handleCanvasClick
             }
             onWheel={
               handleWheel
             }
-            onMouseDown={
+            onPanStart={
               handlePanStart
             }
-            onMouseMove={
+            onPanMove={
               handlePanMove
             }
-            onMouseUp={
+            onPanEnd={
               handlePanEnd
             }
-            onMouseLeave={
-              handlePanEnd
+          />
+
+          <PalettePanel
+            palette={
+              activePalette
             }
-            className={`overflow-auto bg-slate-200 p-6 select-none ${
-              selectedTool ===
-              "pan"
-                ? isPanning
-                  ? "cursor-grabbing"
-                  : "cursor-grab"
-                : ""
-            }`}
-          >
-            <div className="min-h-full min-w-full">
-              {!pattern && (
-                <div className="flex h-full min-h-[640px] items-center justify-center text-sm text-slate-500">
-                  Crea un patrón nuevo para mostrar el Canvas.
-                </div>
-              )}
-
-              {pattern && (
-                <div className="inline-block overflow-hidden rounded-lg border border-slate-400 bg-white shadow-sm">
-                  <canvas
-                    ref={
-                      canvasRef
-                    }
-                    onClick={
-                      handleCanvasClick
-                    }
-                    style={{
-                      width: `${
-                        pattern.width *
-                        CELL_SIZE *
-                        zoom
-                      }px`,
-
-                      height: `${
-                        pattern.height *
-                        CELL_SIZE *
-                        zoom
-                      }px`,
-                    }}
-                    className={`block ${
-                      selectedTool ===
-                      "stitch"
-                        ? "cursor-crosshair"
-                        : selectedTool ===
-                            "erase"
-                          ? "cursor-pointer"
-                          : ""
-                    }`}
-                    aria-label="Canvas del patrón"
-                  />
-                </div>
-              )}
-            </div>
-          </section>
-
-          <aside className="border-l border-slate-300 bg-white p-4">
-            <h2 className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Paleta
-            </h2>
-
-            <div className="mb-5 rounded-lg border border-slate-300 p-3">
-              <div className="mb-2 text-xs text-slate-500">
-                Color seleccionado
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div
-                  className="h-8 w-8 rounded-md border border-slate-300"
-                  style={{
-                    backgroundColor:
-                      selectedThread
-                        .rgb,
-                  }}
-                />
-
-                <div>
-                  <div className="text-sm font-medium">
-                    {
-                      selectedThread
-                        .name
-                    }
-                  </div>
-
-                  <div className="text-xs text-slate-500">
-                    Símbolo:{" "}
-                    {
-                      selectedThread
-                        .symbol
-                    }
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              {activePalette.map(
-                (
-                  thread,
-                ) => (
-                  <button
-                    key={
-                      thread.id
-                    }
-                    onClick={() =>
-                      setSelectedColorId(
-                        thread.id,
-                      )
-                    }
-                    className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left ${
-                      selectedColorId ===
-                      thread.id
-                        ? "border-slate-900 bg-slate-100"
-                        : "border-slate-200 hover:bg-slate-50"
-                    }`}
-                  >
-                    <span
-                      className="h-6 w-6 rounded border border-slate-300"
-                      style={{
-                        backgroundColor:
-                          thread.rgb,
-                      }}
-                    />
-
-                    <span className="flex-1 text-sm">
-                      {
-                        thread.name
-                      }
-                    </span>
-
-                    <span className="text-xs text-slate-500">
-                      {
-                        thread.symbol
-                      }
-                    </span>
-                  </button>
-                ),
-              )}
-            </div>
-          </aside>
+            selectedThread={
+              selectedThread
+            }
+            selectedColorId={
+              selectedColorId
+            }
+            onSelectColor={
+              setSelectedColorId
+            }
+          />
         </section>
 
-        <footer className="flex h-10 items-center justify-between border-t border-slate-300 bg-white px-5 text-xs text-slate-600">
-          <div className="flex items-center gap-6">
-            <span>
-              {
-                displayedWidth
-              }{" "}
-              ×{" "}
-              {
-                displayedHeight
-              }{" "}
-              puntadas
-            </span>
-
-            <span>
-              {
-                displayedStitches
-              }{" "}
-              puntadas
-            </span>
-
-            <span>
-              {
-                displayedColors
-              }{" "}
-              colores
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() =>
-                changeZoom(
-                  -0.25,
-                )
-              }
-              disabled={
-                !pattern ||
-                zoom <=
-                  MIN_ZOOM
-              }
-              className="flex h-7 w-7 items-center justify-center rounded border border-slate-300 bg-white text-sm disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              −
-            </button>
-
-            <button
-              onClick={
-                resetZoom
-              }
-              disabled={
-                !pattern
-              }
-              className="min-w-[90px] rounded px-2 py-1 hover:bg-slate-100 disabled:opacity-40"
-              title="Volver a 100%"
-            >
-              Zoom{" "}
-              {
-                Math.round(
-                  zoom *
-                    100,
-                )
-              }
-              %
-            </button>
-
-            <button
-              onClick={() =>
-                changeZoom(
-                  0.25,
-                )
-              }
-              disabled={
-                !pattern ||
-                zoom >=
-                  MAX_ZOOM
-              }
-              className="flex h-7 w-7 items-center justify-center rounded border border-slate-300 bg-white text-sm disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              +
-            </button>
-          </div>
-        </footer>
+        <StatusBar
+          width={
+            displayedWidth
+          }
+          height={
+            displayedHeight
+          }
+          stitches={
+            displayedStitches
+          }
+          colors={
+            displayedColors
+          }
+          zoom={
+            zoom
+          }
+          hasPattern={
+            Boolean(pattern)
+          }
+          minZoom={
+            MIN_ZOOM
+          }
+          maxZoom={
+            MAX_ZOOM
+          }
+          onZoomOut={() =>
+            changeZoom(
+              -0.25,
+            )
+          }
+          onZoomIn={() =>
+            changeZoom(
+              0.25,
+            )
+          }
+          onResetZoom={
+            resetZoom
+          }
+        />
       </div>
 
-      {showNewPattern && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold">
-                Nuevo patrón
-              </h2>
-
-              <p className="mt-1 text-sm text-slate-500">
-                Define las características básicas del patrón.
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium">
-                  Nombre
-                </label>
-
-                <input
-                  type="text"
-                  value={
-                    name
-                  }
-                  onChange={(
-                    event,
-                  ) =>
-                    setName(
-                      event
-                        .target
-                        .value,
-                    )
-                  }
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="mb-1 block text-sm font-medium">
-                    Ancho
-                  </label>
-
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      min="1"
-                      value={
-                        width
-                      }
-                      onChange={(
-                        event,
-                      ) =>
-                        setWidth(
-                          Number(
-                            event
-                              .target
-                              .value,
-                          ),
-                        )
-                      }
-                      className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
-                    />
-
-                    <span className="text-xs text-slate-500">
-                      puntadas
-                    </span>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-sm font-medium">
-                    Alto
-                  </label>
-
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      min="1"
-                      value={
-                        height
-                      }
-                      onChange={(
-                        event,
-                      ) =>
-                        setHeight(
-                          Number(
-                            event
-                              .target
-                              .value,
-                          ),
-                        )
-                      }
-                      className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
-                    />
-
-                    <span className="text-xs text-slate-500">
-                      puntadas
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-slate-200 pt-4">
-                <div className="mb-3 text-sm font-semibold">
-                  Tela
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="mb-1 block text-sm font-medium">
-                      Tipo
-                    </label>
-
-                    <select
-                      value={
-                        fabricType
-                      }
-                      onChange={(
-                        event,
-                      ) =>
-                        setFabricType(
-                          event
-                            .target
-                            .value,
-                        )
-                      }
-                      className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-500"
-                    >
-                      <option value="aida">
-                        Aida
-                      </option>
-
-                      <option value="evenweave">
-                        Evenweave
-                      </option>
-
-                      <option value="other">
-                        Otra
-                      </option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-sm font-medium">
-                      Count
-                    </label>
-
-                    <input
-                      type="number"
-                      min="1"
-                      value={
-                        fabricCount
-                      }
-                      onChange={(
-                        event,
-                      ) =>
-                        setFabricCount(
-                          Number(
-                            event
-                              .target
-                              .value,
-                          ),
-                        )
-                      }
-                      className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-sm font-medium">
-                      Color
-                    </label>
-
-                    <input
-                      type="color"
-                      value={
-                        fabricColor
-                      }
-                      onChange={(
-                        event,
-                      ) =>
-                        setFabricColor(
-                          event
-                            .target
-                            .value,
-                        )
-                      }
-                      className="h-10 w-full cursor-pointer rounded-md border border-slate-300 bg-white p-1"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={() =>
-                  setShowNewPattern(
-                    false,
-                  )
-                }
-                className="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50"
-              >
-                Cancelar
-              </button>
-
-              <button
-                onClick={
-                  createPattern
-                }
-                className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-700"
-              >
-                Crear patrón
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <NewPatternDialog
+        open={
+          showNewPattern
+        }
+        name={
+          name
+        }
+        width={
+          width
+        }
+        height={
+          height
+        }
+        fabricType={
+          fabricType
+        }
+        fabricCount={
+          fabricCount
+        }
+        fabricColor={
+          fabricColor
+        }
+        onNameChange={
+          setName
+        }
+        onWidthChange={
+          setWidth
+        }
+        onHeightChange={
+          setHeight
+        }
+        onFabricTypeChange={
+          setFabricType
+        }
+        onFabricCountChange={
+          setFabricCount
+        }
+        onFabricColorChange={
+          setFabricColor
+        }
+        onCancel={() =>
+          setShowNewPattern(
+            false,
+          )
+        }
+        onCreate={
+          createPattern
+        }
+      />
     </main>
   );
 }
