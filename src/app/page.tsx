@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 type StitchType = "full";
-type EditorTool = "stitch" | "erase";
+type EditorTool = "stitch" | "erase" | "pan";
 
 type Stitch = {
   x: number;
@@ -80,9 +80,19 @@ const internalPalette: Thread[] = [
 ];
 
 const CELL_SIZE = 20;
+const MIN_ZOOM = 0.25;
+const MAX_ZOOM = 4;
 
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const workspaceRef = useRef<HTMLElement | null>(null);
+
+  const panStartRef = useRef({
+    x: 0,
+    y: 0,
+    scrollLeft: 0,
+    scrollTop: 0,
+  });
 
   const [showNewPattern, setShowNewPattern] = useState(false);
   const [pattern, setPattern] = useState<Pattern | null>(null);
@@ -99,6 +109,9 @@ export default function Home() {
 
   const [selectedTool, setSelectedTool] =
     useState<EditorTool>("stitch");
+
+  const [zoom, setZoom] = useState(1);
+  const [isPanning, setIsPanning] = useState(false);
 
   const selectedThread =
     internalPalette.find((thread) => thread.id === selectedColorId) ??
@@ -153,13 +166,14 @@ export default function Home() {
     setPattern(newPattern);
     setSelectedColorId(internalPalette[0].id);
     setSelectedTool("stitch");
+    setZoom(1);
     setShowNewPattern(false);
   }
 
   function handleCanvasClick(
     event: React.MouseEvent<HTMLCanvasElement>,
   ) {
-    if (!pattern) {
+    if (!pattern || selectedTool === "pan") {
       return;
     }
 
@@ -229,6 +243,89 @@ export default function Home() {
         updatedAt: new Date().toISOString(),
       },
     });
+  }
+
+  function changeZoom(amount: number) {
+    if (!pattern) {
+      return;
+    }
+
+    setZoom((currentZoom) => {
+      const newZoom = currentZoom + amount;
+
+      return Math.min(
+        MAX_ZOOM,
+        Math.max(MIN_ZOOM, Math.round(newZoom * 100) / 100),
+      );
+    });
+  }
+
+  function resetZoom() {
+    if (!pattern) {
+      return;
+    }
+
+    setZoom(1);
+  }
+
+  function handleWheel(event: React.WheelEvent<HTMLElement>) {
+    if (!pattern) {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (event.deltaY < 0) {
+      changeZoom(0.1);
+    } else {
+      changeZoom(-0.1);
+    }
+  }
+
+  function handlePanStart(event: React.MouseEvent<HTMLElement>) {
+    if (selectedTool !== "pan") {
+      return;
+    }
+
+    const workspace = workspaceRef.current;
+
+    if (!workspace) {
+      return;
+    }
+
+    setIsPanning(true);
+
+    panStartRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      scrollLeft: workspace.scrollLeft,
+      scrollTop: workspace.scrollTop,
+    };
+  }
+
+  function handlePanMove(event: React.MouseEvent<HTMLElement>) {
+    if (!isPanning || selectedTool !== "pan") {
+      return;
+    }
+
+    const workspace = workspaceRef.current;
+
+    if (!workspace) {
+      return;
+    }
+
+    const deltaX = event.clientX - panStartRef.current.x;
+    const deltaY = event.clientY - panStartRef.current.y;
+
+    workspace.scrollLeft =
+      panStartRef.current.scrollLeft - deltaX;
+
+    workspace.scrollTop =
+      panStartRef.current.scrollTop - deltaY;
+  }
+
+  function handlePanEnd() {
+    setIsPanning(false);
   }
 
   useEffect(() => {
@@ -320,9 +417,11 @@ export default function Home() {
   const displayedWidth = pattern?.width ?? 100;
   const displayedHeight = pattern?.height ?? 80;
   const displayedStitches = pattern?.stitches.length ?? 0;
+
   const displayedColors = pattern
-  ? new Set(pattern.stitches.map((stitch) => stitch.colorId)).size
-  : 0;
+    ? new Set(pattern.stitches.map((stitch) => stitch.colorId)).size
+    : 0;
+
   return (
     <main className="min-h-screen bg-slate-100 text-slate-900">
       <div className="flex min-h-screen flex-col">
@@ -403,9 +502,12 @@ export default function Home() {
               </button>
 
               <button
-                disabled
-                className="w-full cursor-not-allowed rounded-lg border border-slate-200 px-3 py-3 text-left text-sm text-slate-400"
-                title="Se implementará en el siguiente bloque"
+                onClick={() => setSelectedTool("pan")}
+                className={`w-full rounded-lg px-3 py-3 text-left text-sm ${
+                  selectedTool === "pan"
+                    ? "bg-slate-900 text-white"
+                    : "border border-slate-300 hover:bg-slate-50"
+                }`}
               >
                 Mover
               </button>
@@ -417,14 +519,28 @@ export default function Home() {
               </div>
 
               <div className="mt-1 text-sm font-medium">
-                {selectedTool === "stitch"
-                  ? "Puntada"
-                  : "Borrar"}
+                {selectedTool === "stitch" && "Puntada"}
+                {selectedTool === "erase" && "Borrar"}
+                {selectedTool === "pan" && "Mover"}
               </div>
             </div>
           </aside>
 
-          <section className="overflow-auto bg-slate-200 p-6">
+          <section
+            ref={workspaceRef}
+            onWheel={handleWheel}
+            onMouseDown={handlePanStart}
+            onMouseMove={handlePanMove}
+            onMouseUp={handlePanEnd}
+            onMouseLeave={handlePanEnd}
+            className={`overflow-auto bg-slate-200 p-6 select-none ${
+              selectedTool === "pan"
+                ? isPanning
+                  ? "cursor-grabbing"
+                  : "cursor-grab"
+                : ""
+            }`}
+          >
             <div className="min-h-full min-w-full">
               {!pattern && (
                 <div className="flex h-full min-h-[640px] items-center justify-center text-sm text-slate-500">
@@ -437,10 +553,16 @@ export default function Home() {
                   <canvas
                     ref={canvasRef}
                     onClick={handleCanvasClick}
+                    style={{
+                      width: `${pattern.width * CELL_SIZE * zoom}px`,
+                      height: `${pattern.height * CELL_SIZE * zoom}px`,
+                    }}
                     className={`block ${
                       selectedTool === "stitch"
                         ? "cursor-crosshair"
-                        : "cursor-pointer"
+                        : selectedTool === "erase"
+                          ? "cursor-pointer"
+                          : ""
                     }`}
                     aria-label="Canvas del patrón"
                   />
@@ -519,7 +641,32 @@ export default function Home() {
             <span>{displayedColors} colores</span>
           </div>
 
-          <div>Zoom 100%</div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => changeZoom(-0.25)}
+              disabled={!pattern || zoom <= MIN_ZOOM}
+              className="flex h-7 w-7 items-center justify-center rounded border border-slate-300 bg-white text-sm disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              −
+            </button>
+
+            <button
+              onClick={resetZoom}
+              disabled={!pattern}
+              className="min-w-[90px] rounded px-2 py-1 hover:bg-slate-100 disabled:opacity-40"
+              title="Volver a 100%"
+            >
+              Zoom {Math.round(zoom * 100)}%
+            </button>
+
+            <button
+              onClick={() => changeZoom(0.25)}
+              disabled={!pattern || zoom >= MAX_ZOOM}
+              className="flex h-7 w-7 items-center justify-center rounded border border-slate-300 bg-white text-sm disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              +
+            </button>
+          </div>
         </footer>
       </div>
 
@@ -634,9 +781,7 @@ export default function Home() {
                       min="1"
                       value={fabricCount}
                       onChange={(event) =>
-                        setFabricCount(
-                          Number(event.target.value),
-                        )
+                        setFabricCount(Number(event.target.value))
                       }
                       className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
                     />
