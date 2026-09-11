@@ -21,6 +21,10 @@ import type {
 } from "@/lib/converter/converterTypes";
 
 import {
+  convertImageToPattern,
+} from "@/lib/converter/imageToPattern";
+
+import {
   loadImageFile,
   releaseLoadedImage,
 } from "@/lib/converter/imageLoader";
@@ -38,6 +42,10 @@ import {
 import {
   cleanupPatternColors,
 } from "@/lib/converter/patternCleanup";
+
+import {
+  isValidPattern,
+} from "@/lib/patternValidation";
 
 const TEST_COLOR_OPTIONS = [
   8,
@@ -82,6 +90,14 @@ export default function QuantizationTestPage() {
     );
 
   const [
+    patternName,
+    setPatternName,
+  ] =
+    useState(
+      "Patrón desde imagen",
+    );
+
+  const [
     maxColors,
     setMaxColors,
   ] =
@@ -122,6 +138,14 @@ export default function QuantizationTestPage() {
     );
 
   const [
+    validationInfo,
+    setValidationInfo,
+  ] =
+    useState<string | null>(
+      null,
+    );
+
+  const [
     error,
     setError,
   ] =
@@ -142,14 +166,10 @@ export default function QuantizationTestPage() {
   }, [loadedImage]);
 
   function renderConvertedImage(
-    image:
-      LoadedImage,
-    colors:
-      number,
-    shouldRemoveBackground:
-      boolean,
-    cleanup:
-      CleanupLevel,
+    image: LoadedImage,
+    colors: number,
+    shouldRemoveBackground: boolean,
+    cleanup: CleanupLevel,
   ) {
     const dimensions =
       calculateProportionalDimensions(
@@ -274,16 +294,13 @@ export default function QuantizationTestPage() {
         dataIndex + 3
       ] = 255;
 
-      stitchCount +=
-        1;
+      stitchCount += 1;
     }
 
     const canvas =
       resultCanvasRef.current;
 
-    if (
-      !canvas
-    ) {
+    if (!canvas) {
       return;
     }
 
@@ -298,9 +315,7 @@ export default function QuantizationTestPage() {
         "2d",
       );
 
-    if (
-      !context
-    ) {
+    if (!context) {
       throw new Error(
         "No se ha podido crear el Canvas de prueba.",
       );
@@ -337,6 +352,10 @@ export default function QuantizationTestPage() {
         `${generatedPalette.length} colores · ` +
         `${cleaned.changedCellCount} celdas limpiadas`,
     );
+
+    setValidationInfo(
+      null,
+    );
   }
 
   async function handleFile(
@@ -351,6 +370,7 @@ export default function QuantizationTestPage() {
     }
 
     setError(null);
+    setValidationInfo(null);
 
     try {
       if (
@@ -368,6 +388,17 @@ export default function QuantizationTestPage() {
 
       setLoadedImage(
         image,
+      );
+
+      const nameWithoutExtension =
+        file.name.replace(
+          /\.[^.]+$/,
+          "",
+        );
+
+      setPatternName(
+        nameWithoutExtension ||
+          "Patrón desde imagen",
       );
 
       renderConvertedImage(
@@ -397,9 +428,7 @@ export default function QuantizationTestPage() {
       cleanup?: CleanupLevel;
     },
   ) {
-    if (
-      !loadedImage
-    ) {
+    if (!loadedImage) {
       return;
     }
 
@@ -463,6 +492,147 @@ export default function QuantizationTestPage() {
     });
   }
 
+  function sanitizeFilename(
+    value: string,
+  ): string {
+    const sanitized =
+      value
+        .trim()
+        .replace(
+          /[<>:"/\\|?*]+/g,
+          "-",
+        )
+        .replace(
+          /\s+/g,
+          "-",
+        );
+
+    return (
+      sanitized ||
+      "pattern"
+    );
+  }
+
+  function generateStitchFile() {
+    if (!loadedImage) {
+      setError(
+        "Primero debes cargar una imagen.",
+      );
+
+      return;
+    }
+
+    setError(null);
+    setValidationInfo(null);
+
+    try {
+      const dimensions =
+        calculateProportionalDimensions(
+          loadedImage.width,
+          loadedImage.height,
+          120,
+        );
+
+      const result =
+        convertImageToPattern(
+          loadedImage,
+          patternName,
+          {
+            width:
+              dimensions.width,
+
+            height:
+              dimensions.height,
+
+            maxColors,
+
+            cleanup:
+              cleanupLevel,
+
+            removeBackground,
+
+            fabricType:
+              "aida",
+
+            fabricCount:
+              14,
+
+            fabricColor:
+              "#ffffff",
+          },
+        );
+
+      if (
+        !isValidPattern(
+          result.pattern,
+        )
+      ) {
+        throw new Error(
+          "El motor ha generado un Pattern que no supera la validación interna.",
+        );
+      }
+
+      setValidationInfo(
+        `Pattern válido · ` +
+          `${result.statistics.width} × ${result.statistics.height} · ` +
+          `${result.statistics.stitchCount} puntadas · ` +
+          `${result.statistics.colorCount} colores`,
+      );
+
+      const json =
+        JSON.stringify(
+          result.pattern,
+          null,
+          2,
+        );
+
+      const blob =
+        new Blob(
+          [json],
+          {
+            type:
+              "application/json",
+          },
+        );
+
+      const url =
+        URL.createObjectURL(
+          blob,
+        );
+
+      const link =
+        document.createElement(
+          "a",
+        );
+
+      link.href = url;
+
+      link.download =
+        `${sanitizeFilename(
+          result.pattern.name,
+        )}.stitch`;
+
+      document.body.appendChild(
+        link,
+      );
+
+      link.click();
+      link.remove();
+
+      URL.revokeObjectURL(
+        url,
+      );
+    } catch (
+      caughtError
+    ) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "No se ha podido generar el archivo .stitch.",
+      );
+    }
+  }
+
   return (
     <main className="min-h-screen bg-slate-100 p-8 text-slate-900">
       <div className="mx-auto max-w-6xl">
@@ -471,7 +641,7 @@ export default function QuantizationTestPage() {
         </h1>
 
         <p className="mt-2 text-sm text-slate-600">
-          Cuantización y limpieza V1
+          Conversión completa V1
         </p>
 
         <div className="mt-6 flex flex-wrap items-center gap-6">
@@ -564,9 +734,52 @@ export default function QuantizationTestPage() {
           )}
         </div>
 
+        <div className="mt-4 flex flex-wrap items-end gap-4">
+          <label className="block">
+            <span className="mb-1 block text-sm font-medium">
+              Nombre del patrón
+            </span>
+
+            <input
+              type="text"
+              value={
+                patternName
+              }
+              onChange={(
+                event,
+              ) =>
+                setPatternName(
+                  event.target
+                    .value,
+                )
+              }
+              className="w-72 rounded border border-slate-300 bg-white px-3 py-2"
+            />
+          </label>
+
+          <button
+            type="button"
+            disabled={
+              !loadedImage
+            }
+            onClick={
+              generateStitchFile
+            }
+            className="rounded bg-slate-900 px-4 py-2 font-medium text-white disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Generar .stitch
+          </button>
+        </div>
+
         {error && (
           <div className="mt-4 rounded border border-red-300 bg-red-50 p-3 text-red-800">
             {error}
+          </div>
+        )}
+
+        {validationInfo && (
+          <div className="mt-4 rounded border border-green-300 bg-green-50 p-3 text-green-800">
+            {validationInfo}
           </div>
         )}
 
