@@ -550,7 +550,7 @@ export function cleanupPatternColors(
     width * height
   ) {
     throw new Error(
-      "La matriz de colores no coincide con las dimensiones del patrón.",
+      "The color matrix does not match the pattern dimensions.",
     );
   }
 

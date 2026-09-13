@@ -28,7 +28,7 @@ function validateMaxColors(
       CONVERTER_LIMITS.maxColors
   ) {
     throw new Error(
-      `El número máximo de colores debe estar entre ${CONVERTER_LIMITS.minColors} y ${CONVERTER_LIMITS.maxColors}.`,
+      `The maximum number of colors must be between ${CONVERTER_LIMITS.minColors} y ${CONVERTER_LIMITS.maxColors}.`,
     );
   }
 }
@@ -370,7 +370,7 @@ function extractValidPixels(
       pixelCount
   ) {
     throw new Error(
-      "La máscara de fondo no coincide con las dimensiones de la imagen.",
+      "The background mask does not match the image dimensions.",
     );
   }
 

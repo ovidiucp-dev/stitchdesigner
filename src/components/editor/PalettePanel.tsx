@@ -23,12 +23,12 @@ export function PalettePanel({
   return (
     <aside className="border-l border-slate-300 bg-white p-4">
       <h2 className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-500">
-        Paleta
+        Palette
       </h2>
 
       <div className="mb-5 rounded-lg border border-slate-300 p-3">
         <div className="mb-2 text-xs text-slate-500">
-          Color seleccionado
+          Selected color
         </div>
 
         <div className="flex items-center gap-3">

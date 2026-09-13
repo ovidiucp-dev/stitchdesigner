@@ -115,7 +115,7 @@ export default function Home() {
     );
 
   const [name, setName] =
-    useState("Mi patrón")
+    useState("My pattern")
 
   const [width, setWidth] =
     useState(100);
@@ -197,7 +197,7 @@ export default function Home() {
     activePalette[0];
 
   function openNewPatternDialog() {
-    setName("Mi patrón"); setWidth(100);
+    setName("My pattern"); setWidth(100);
     setHeight(80);
     setFabricType("aida");
     setFabricCount(14);
@@ -218,7 +218,7 @@ export default function Home() {
       fabricCount <= 0
     ) {
       alert(
-        "Revisa los datos del patrón. Ancho, alto y count deben ser válidos."     );
+        "Check the pattern settings. Width, height, and fabric count must be valid."     );
 
       return;
     }
@@ -289,7 +289,7 @@ export default function Home() {
     if (
       pattern &&
       !window.confirm(
-        "El patrón actual será sustituido por el patrón generado desde la imagen. ¿Quieres continuar?",
+        "The current pattern will be replaced by the pattern generated from the image. Do you want to continue?",
       )
     ) {
       return;
@@ -663,7 +663,7 @@ export default function Home() {
         )
       ) {
         alert(
-          "El archivo no es un patrón StitchDesigner válido o utiliza una versión no compatible."
+          "The file is not a valid StitchDesigner pattern or uses an unsupported version."
         );
 
         event.target.value =
@@ -690,7 +690,7 @@ export default function Home() {
       setRedoStack([]);
     } catch {
       alert(
-        "No se ha podido abrir el archivo. Comprueba que es un archivo .stitch válido."
+        "The file could not be opened. Check that it is a valid .stitch file."
       );
     }
 
@@ -714,7 +714,7 @@ export default function Home() {
       (blob) => {
         if (!blob) {
           alert(
-            "No se ha podido generar la imagen PNG.",
+            "The PNG image could not be generated.",
           );
 
           return;

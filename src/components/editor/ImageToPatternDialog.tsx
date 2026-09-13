@@ -40,15 +40,15 @@ type ImageToPatternDialogProps = {
 
 const DETAIL_OPTIONS = [
   {
-    label: "Bajo",
+    label: "Low",
     value: 80,
   },
   {
-    label: "Medio",
+    label: "Medium",
     value: 120,
   },
   {
-    label: "Alto",
+    label: "High",
     value: 160,
   },
 ] as const;
@@ -64,19 +64,19 @@ const CLEANUP_OPTIONS: {
   value: CleanupLevel;
 }[] = [
   {
-    label: "Sin limpiar",
+    label: "None",
     value: "none",
   },
   {
-    label: "Suave",
+    label: "Soft",
     value: "soft",
   },
   {
-    label: "Equilibrada",
+    label: "Balanced",
     value: "balanced",
   },
   {
-    label: "Alta",
+    label: "High",
     value: "high",
   },
 ];
@@ -109,7 +109,7 @@ export function ImageToPatternDialog({
     setPatternName,
   ] =
     useState(
-      "Patrón desde imagen",
+      "Pattern from image",
     );
 
   const [
@@ -394,7 +394,7 @@ export function ImageToPatternDialog({
       setError(
         caughtError instanceof Error
           ? caughtError.message
-          : "No se ha podido generar la previsualización.",
+          : "The preview could not be generated.",
       );
     }
   }
@@ -438,7 +438,7 @@ export function ImageToPatternDialog({
 
       setPatternName(
         fileName ||
-          "Patrón desde imagen",
+          "Pattern from image",
       );
 
       const dimensions =
@@ -471,7 +471,7 @@ export function ImageToPatternDialog({
       setError(
         caughtError instanceof Error
           ? caughtError.message
-          : "No se ha podido cargar la imagen.",
+          : "The image could not be loaded.",
       );
     }
 
@@ -813,11 +813,11 @@ export function ImageToPatternDialog({
         <header className="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4">
           <div>
             <h2 className="text-xl font-semibold">
-              Imagen → Patrón
+              Image → Pattern
             </h2>
 
             <p className="text-sm text-slate-500">
-              Ajusta el resultado antes de crear el patrón.
+              Adjust the result before creating the pattern.
             </p>
           </div>
 
@@ -828,7 +828,7 @@ export function ImageToPatternDialog({
             }
             className="rounded border border-slate-300 px-3 py-2 text-sm"
           >
-            Cerrar
+            Close
           </button>
         </header>
 
@@ -836,7 +836,7 @@ export function ImageToPatternDialog({
           <aside className="overflow-y-auto border-r border-slate-200 p-5">
             <label className="block">
               <span className="mb-2 block text-sm font-medium">
-                Imagen
+                Image
               </span>
 
               <input
@@ -851,7 +851,7 @@ export function ImageToPatternDialog({
 
             <label className="mt-5 block">
               <span className="mb-1 block text-sm font-medium">
-                Nombre
+                Name
               </span>
 
               <input
@@ -872,7 +872,7 @@ export function ImageToPatternDialog({
 
             <div className="mt-6">
               <div className="text-sm font-medium">
-                Detalle
+                Detail
               </div>
 
               <div className="mt-2 grid grid-cols-3 gap-2">
@@ -905,7 +905,7 @@ export function ImageToPatternDialog({
             <div className="mt-4 grid grid-cols-2 gap-3">
               <label>
                 <span className="mb-1 block text-xs text-slate-500">
-                  Ancho
+                  Width
                 </span>
 
                 <input
@@ -930,7 +930,7 @@ export function ImageToPatternDialog({
 
               <label>
                 <span className="mb-1 block text-xs text-slate-500">
-                  Alto
+                  Height
                 </span>
 
                 <input
@@ -969,12 +969,12 @@ export function ImageToPatternDialog({
                 }
               />
 
-              Mantener proporción
+              Keep aspect ratio
             </label>
 
             <div className="mt-6">
               <div className="text-sm font-medium">
-                Número máximo de colores
+                Maximum number of colors
               </div>
 
               <div className="mt-2 grid grid-cols-3 gap-2">
@@ -1000,7 +1000,7 @@ export function ImageToPatternDialog({
                           : "border-slate-300"
                       }`}
                     >
-                      {value} colores
+                      {value} colors
                     </button>
                   ),
                 )}
@@ -1008,7 +1008,7 @@ export function ImageToPatternDialog({
 
               <label className="mt-3 block">
                 <span className="mb-1 block text-xs text-slate-500">
-                  Personalizado (4–32)
+                  Custom (4–32)
                 </span>
 
                 <input
@@ -1035,7 +1035,7 @@ export function ImageToPatternDialog({
 
             <div className="mt-6">
               <div className="text-sm font-medium">
-                Limpieza del patrón
+                Pattern cleanup
               </div>
 
               <select
@@ -1085,7 +1085,7 @@ export function ImageToPatternDialog({
                 }
               />
 
-              Eliminar fondo simple
+              Remove simple background
             </label>
 
             <div className="mt-6 grid grid-cols-2 gap-3">
@@ -1115,7 +1115,7 @@ export function ImageToPatternDialog({
 
               <label>
                 <span className="mb-1 block text-xs text-slate-500">
-                  Tela
+                  Fabric
                 </span>
 
                 <input
@@ -1178,7 +1178,7 @@ export function ImageToPatternDialog({
             <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto p-6">
               {!loadedImage && (
                 <div className="text-sm text-slate-500">
-                  Selecciona una imagen JPG o PNG.
+                  Select a JPG or PNG image.
                 </div>
               )}
 
@@ -1229,19 +1229,19 @@ export function ImageToPatternDialog({
                           generatedPattern.height
                         }
                       </strong>{" "}
-                      puntadas ·{" "}
+                      stitches ·{" "}
                       {
                         generatedPattern
                           .stitches
                           .length
                       }{" "}
-                      puntadas reales ·{" "}
+                      actual stitches ·{" "}
                       {
                         generatedPattern
                           .palette
                           .length
                       }{" "}
-                      colores ·{" "}
+                      colors ·{" "}
                       {
                         physicalWidth
                       }{" "}
@@ -1252,7 +1252,7 @@ export function ImageToPatternDialog({
                       cm
                     </>
                   ) : (
-                    "Sin previsualización"
+                    "No preview"
                   )}
                 </div>
 
@@ -1264,7 +1264,7 @@ export function ImageToPatternDialog({
                     }
                     className="rounded border border-slate-300 px-4 py-2"
                   >
-                    Cancelar
+                    Cancel
                   </button>
 
                   <button
@@ -1277,7 +1277,7 @@ export function ImageToPatternDialog({
                     }
                     className="rounded bg-slate-900 px-4 py-2 font-medium text-white disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    Crear patrón
+                    Create pattern
                   </button>
                 </div>
               </div>

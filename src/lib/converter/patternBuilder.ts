@@ -38,7 +38,7 @@ export function buildPattern(
     !Number.isInteger(height)
   ) {
     throw new Error(
-      "Las dimensiones del patrón no son válidas.",
+      "The pattern dimensions are not valid.",
     );
   }
 
@@ -47,7 +47,7 @@ export function buildPattern(
     width * height
   ) {
     throw new Error(
-      "La matriz de colores no coincide con las dimensiones del patrón.",
+      "The color matrix does not match the pattern dimensions.",
     );
   }
 
@@ -55,7 +55,7 @@ export function buildPattern(
     palette.length === 0
   ) {
     throw new Error(
-      "No se puede crear un patrón sin colores.",
+      "A pattern cannot be created without colors.",
     );
   }
 
@@ -86,7 +86,7 @@ export function buildPattern(
 
     if (!thread) {
       throw new Error(
-        "Se ha encontrado una celda asociada a un color inexistente.",
+        "A cell references a color that does not exist.",
       );
     }
 
@@ -120,7 +120,7 @@ export function buildPattern(
 
     name:
       name.trim() ||
-      "Patrón desde imagen",
+      "Pattern from image",
 
     width,
     height,

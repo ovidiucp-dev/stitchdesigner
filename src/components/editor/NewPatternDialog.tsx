@@ -65,18 +65,18 @@ export function NewPatternDialog({
       <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
         <div className="mb-6">
           <h2 className="text-xl font-semibold">
-            Nuevo patrón
+            New pattern
           </h2>
 
           <p className="mt-1 text-sm text-slate-500">
-            Define las características básicas del patrón.
+            Define the basic pattern settings.
           </p>
         </div>
 
         <div className="space-y-4">
           <div>
             <label className="mb-1 block text-sm font-medium">
-              Nombre
+              Name
             </label>
 
             <input
@@ -94,7 +94,7 @@ export function NewPatternDialog({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="mb-1 block text-sm font-medium">
-                Ancho
+                Width
               </label>
 
               <div className="flex items-center gap-2">
@@ -113,14 +113,14 @@ export function NewPatternDialog({
                 />
 
                 <span className="text-xs text-slate-500">
-                  puntadas
+                  stitches
                 </span>
               </div>
             </div>
 
             <div>
               <label className="mb-1 block text-sm font-medium">
-                Alto
+                Height
               </label>
 
               <div className="flex items-center gap-2">
@@ -139,7 +139,7 @@ export function NewPatternDialog({
                 />
 
                 <span className="text-xs text-slate-500">
-                  puntadas
+                  stitches
                 </span>
               </div>
             </div>
@@ -147,7 +147,7 @@ export function NewPatternDialog({
 
           <div className="border-t border-slate-200 pt-4">
             <div className="mb-3 text-sm font-semibold">
-              Tela
+              Fabric
             </div>
 
             <div className="space-y-4">
@@ -224,14 +224,14 @@ export function NewPatternDialog({
             onClick={onCancel}
             className="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50"
           >
-            Cancelar
+            Cancel
           </button>
 
           <button
             onClick={onCreate}
             className="rounded-md bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-700"
           >
-            Crear patrón
+            Create pattern
           </button>
         </div>
       </div>

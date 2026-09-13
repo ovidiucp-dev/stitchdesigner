@@ -96,7 +96,7 @@ export function convertImageToPattern(
     0
   ) {
     throw new Error(
-      "No quedan colores válidos para generar el patrón.",
+      "No valid colors remain to generate the pattern.",
     );
   }
 

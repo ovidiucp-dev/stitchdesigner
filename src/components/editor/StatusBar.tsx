@@ -32,15 +32,15 @@ export function StatusBar({
     <footer className="flex h-10 items-center justify-between border-t border-slate-300 bg-white px-5 text-xs text-slate-600">
       <div className="flex items-center gap-6">
         <span>
-          {width} × {height} puntadas
+          {width} × {height} stitches
         </span>
 
         <span>
-          {stitches} puntadas
+          {stitches} stitches
         </span>
 
         <span>
-          {colors} colores
+          {colors} colors
         </span>
       </div>
 

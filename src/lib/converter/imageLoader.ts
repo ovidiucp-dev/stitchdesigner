@@ -26,7 +26,7 @@ export async function loadImageFile(
     )
   ) {
     throw new Error(
-      "Formato no compatible. Utiliza una imagen JPG, JPEG o PNG.",
+      "Unsupported format. Use a JPG, JPEG, or PNG image.",
     );
   }
 
@@ -35,7 +35,7 @@ export async function loadImageFile(
     CONVERTER_LIMITS.maxFileSizeBytes
   ) {
     throw new Error(
-      `La imagen pesa ${formatMegabytes(
+      `The image size is ${formatMegabytes(
         file.size,
       )} MB. El máximo permitido en esta versión es 20 MB.`,
     );
@@ -50,7 +50,7 @@ export async function loadImageFile(
       );
   } catch {
     throw new Error(
-      "No se ha podido leer la imagen. Comprueba que el archivo JPG o PNG no esté dañado.",
+      "The image could not be read. Check that the JPG or PNG file is not corrupted.",
     );
   }
 
@@ -61,7 +61,7 @@ export async function loadImageFile(
     bitmap.close();
 
     throw new Error(
-      "La imagen no tiene unas dimensiones válidas.",
+      "The image dimensions are not valid.",
     );
   }
 
@@ -77,7 +77,7 @@ export async function loadImageFile(
     bitmap.close();
 
     throw new Error(
-      `La imagen mide ${dimensions} píxeles. El máximo permitido en esta versión es 12.000 × 12.000 píxeles.`,
+      `The image dimensions are ${dimensions} píxeles. The maximum allowed in this version is 12,000 × 12,000 pixels.`,
     );
   }
 

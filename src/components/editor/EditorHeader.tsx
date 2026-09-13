@@ -58,21 +58,21 @@ export function EditorHeader({
             onClick={onNew}
             className="rounded-md px-3 py-2 text-sm hover:bg-slate-100"
           >
-            Nuevo
+            New
           </button>
 
           <button
             onClick={onOpen}
             className="rounded-md px-3 py-2 text-sm hover:bg-slate-100"
           >
-            Abrir
+            Open
           </button>
 
           <button
             onClick={onImageToPattern}
             className="rounded-md px-3 py-2 text-sm hover:bg-slate-100"
           >
-            Imagen → Patrón
+            Image → Pattern
           </button>
 
           <button
@@ -80,7 +80,7 @@ export function EditorHeader({
             disabled={!hasPattern}
             className="rounded-md px-3 py-2 text-sm hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Guardar
+            Save
           </button>
 
           <input
@@ -115,7 +115,7 @@ export function EditorHeader({
           disabled={!hasPattern}
           className="rounded-md bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Exportar PNG
+          Export PNG
         </button>
       </div>
     </header>

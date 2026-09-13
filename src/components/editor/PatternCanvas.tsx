@@ -76,7 +76,7 @@ export function PatternCanvas({
     >
       {!pattern && (
         <div className="flex h-full min-h-full items-center justify-center text-sm text-slate-500">
-          Crea un patrón nuevo para mostrar el Canvas.
+          Create a new pattern to display the canvas.
         </div>
       )}
 
@@ -104,7 +104,7 @@ export function PatternCanvas({
                   ? "cursor-pointer"
                   : ""
             }`}
-            aria-label="Canvas del patrón"
+            aria-label="Pattern canvas"
           />
         </div>
       )}

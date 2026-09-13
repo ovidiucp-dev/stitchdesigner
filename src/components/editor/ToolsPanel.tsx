@@ -19,7 +19,7 @@ export function ToolsPanel({
   return (
     <aside className="border-r border-slate-300 bg-white p-4">
       <h2 className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-500">
-        Herramientas
+        Tools
       </h2>
 
       <div className="space-y-2">
@@ -33,7 +33,7 @@ export function ToolsPanel({
               : "border border-slate-300 hover:bg-slate-50"
           }`}
         >
-          Puntada
+          Stitch
         </button>
 
         <button
@@ -46,7 +46,7 @@ export function ToolsPanel({
               : "border border-slate-300 hover:bg-slate-50"
           }`}
         >
-          Borrar
+          Erase
         </button>
 
         <button
@@ -59,24 +59,24 @@ export function ToolsPanel({
               : "border border-slate-300 hover:bg-slate-50"
           }`}
         >
-          Mover
+          Pan
         </button>
       </div>
 
       <div className="mt-6 border-t border-slate-200 pt-4">
         <div className="text-xs text-slate-500">
-          Herramienta activa
+          Active tool
         </div>
 
         <div className="mt-1 text-sm font-medium">
           {selectedTool === "stitch" &&
-            "Puntada"}
+            "Stitch"}
 
           {selectedTool === "erase" &&
-            "Borrar"}
+            "Erase"}
 
           {selectedTool === "pan" &&
-            "Mover"}
+            "Pan"}
         </div>
       </div>
     </aside>

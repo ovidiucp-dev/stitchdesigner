@@ -136,7 +136,7 @@ export function buildPatternPalette(
     THREAD_SYMBOLS.length
   ) {
     throw new Error(
-      `La paleta contiene más de ${THREAD_SYMBOLS.length} colores y no hay suficientes símbolos disponibles.`,
+      `The palette contains more than ${THREAD_SYMBOLS.length} colors and there are not enough symbols available.`,
     );
   }
 
@@ -179,7 +179,7 @@ export function buildPatternPalette(
     entries.length === 0
   ) {
     throw new Error(
-      "El patrón generado no contiene ningún color utilizado.",
+      "The generated pattern does not contain any used colors.",
     );
   }
 
@@ -238,7 +238,7 @@ export function buildPatternPalette(
       newIndex < 0
     ) {
       throw new Error(
-        "Se ha encontrado una celda asociada a un color no utilizado.",
+        "A cell references an unused color.",
       );
     }
 

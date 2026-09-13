@@ -97,7 +97,7 @@ export function matchImageToPalette(
     palette.length === 0
   ) {
     throw new Error(
-      "No existe una paleta de colores para realizar la conversión.",
+      "There is no color palette available for conversion.",
     );
   }
 
@@ -107,7 +107,7 @@ export function matchImageToPalette(
       pixelCount
   ) {
     throw new Error(
-      "La máscara de fondo no coincide con las dimensiones de la imagen.",
+      "The background mask does not match the image dimensions.",
     );
   }
 

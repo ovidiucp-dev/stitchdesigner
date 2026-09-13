@@ -18,7 +18,7 @@ function validatePatternDimensions(
     !Number.isInteger(height)
   ) {
     throw new Error(
-      "Las dimensiones del patrón deben ser números enteros.",
+      "Pattern dimensions must be whole numbers.",
     );
   }
 
@@ -29,7 +29,7 @@ function validatePatternDimensions(
       CONVERTER_LIMITS.minPatternHeight
   ) {
     throw new Error(
-      "El patrón debe tener como mínimo 10 × 10 puntadas.",
+      "The pattern must be at least 10 × 10 stitches.",
     );
   }
 
@@ -40,7 +40,7 @@ function validatePatternDimensions(
       CONVERTER_LIMITS.maxPatternHeight
   ) {
     throw new Error(
-      "El patrón puede tener como máximo 300 × 300 puntadas en esta versión.",
+      "The pattern can be at most 300 × 300 stitches in this version.",
     );
   }
 }
@@ -55,7 +55,7 @@ export function calculateProportionalDimensions(
     sourceHeight <= 0
   ) {
     throw new Error(
-      "Las dimensiones de la imagen de origen no son válidas.",
+      "The source image dimensions are not valid.",
     );
   }
 
@@ -144,7 +144,7 @@ export function resizeImageForPattern(
 
   if (!context) {
     throw new Error(
-      "El navegador no ha podido crear el área de procesamiento de imagen.",
+      "The browser could not create the image processing canvas.",
     );
   }
 
